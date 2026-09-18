@@ -396,16 +396,16 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
     link({ href, title, text, tokens }: Tokens.Link): string {
       const parsedText = this.parser.parseInline(tokens)
       if (MP_WEIXIN_LINK_REGEX.test(href)) {
-        return `<a href="${href}" title="${title || text}">${parsedText}</a>`
+        return `<a href="${href}" title="${title || text}" target="_blank" rel="noopener">${parsedText}</a>`
       }
       if (href === text) {
         return parsedText
       }
       if (opts.citeStatus) {
         const ref = addFootnote(title || text, href)
-        return `<a href="${href}" title="${title || text}">${parsedText}<sup>[${ref}]</sup></a>`
+        return `<a href="${href}" title="${title || text}" target="_blank" rel="noopener">${parsedText}<sup>[${ref}]</sup></a>`
       }
-      return `<a href="${href}" title="${title || text}">${parsedText}</a>`
+      return `<a href="${href}" title="${title || text}" target="_blank" rel="noopener">${parsedText}</a>`
     },
 
     strong({ tokens }: Tokens.Strong): string {
