@@ -25,6 +25,11 @@ export const themeOptionsMap = {
     value: `simple`,
     desc: `@okooo5km`,
   },
+  lenciel: {
+    label: `Lenciel`,
+    value: `lenciel`,
+    desc: `@lenciel`,
+  },
 }
 
 export const themeOptions: IConfigOption<ThemeName>[] = [
@@ -42,5 +47,10 @@ export const themeOptions: IConfigOption<ThemeName>[] = [
     label: `简洁`,
     value: `simple`,
     desc: `@okooo5km`,
+  },
+  {
+    label: `Lenciel`,
+    value: `lenciel`,
+    desc: `@lenciel`,
   },
 ]
