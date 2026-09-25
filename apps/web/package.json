@@ -13,6 +13,7 @@
     "build:h5-netlify": "run-s \"build:h5-netlify:only {@}\" type-check --",
     "build:h5-netlify:only": "cross-env SERVER_ENV=NETLIFY vite build",
     "build:utools": "cross-env SERVER_ENV=UTOOLS vite build --mode utools --outDir ../utools/dist --emptyOutDir",
+    "build:studio": "cross-env SERVER_ENV=STUDIO vite build",
     "build:analyze": "cross-env ANALYZE=true vite build",
     "preview": "pnpm run build && vite preview",
     "wrangler:dev": "cross-env CF_WORKERS=1 vite --host",

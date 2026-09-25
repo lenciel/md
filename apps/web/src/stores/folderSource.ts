@@ -165,7 +165,7 @@ export const useFolderSourceStore = defineStore(`folderSource`, () => {
       for await (const entry of handle.values()) {
         const entryPath = `${path}/${entry.name}`
         if (entry.kind === `file`) {
-          if (entry.name.toLowerCase().endsWith(`.md`)) {
+          if (/\.(?:md|markdown)$/i.test(entry.name)) {
             node.children!.push({
               name: entry.name,
               path: entryPath,

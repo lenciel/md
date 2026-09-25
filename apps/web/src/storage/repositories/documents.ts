@@ -7,7 +7,7 @@ import { store } from '@/storage/manager'
 import { isStorageQuotaError, warnStorageQuota } from '@/storage/quota'
 
 function toStored(post: Post): StoredDocument {
-  return {
+  const doc: StoredDocument = {
     id: post.id,
     title: post.title,
     content: post.content,
@@ -17,10 +17,14 @@ function toStored(post: Post): StoredDocument {
     parentId: post.parentId ?? null,
     collapsed: post.collapsed,
   }
+  // Omit when unset so documents saved before studio mode keep their exact shape.
+  if (post.sourcePath !== undefined)
+    doc.sourcePath = post.sourcePath
+  return doc
 }
 
 function fromStored(doc: StoredDocument): Post {
-  return {
+  const post: Post = {
     id: doc.id,
     title: doc.title,
     content: doc.content,
@@ -30,6 +34,9 @@ function fromStored(doc: StoredDocument): Post {
     parentId: doc.parentId ?? null,
     collapsed: doc.collapsed,
   }
+  if (doc.sourcePath !== undefined)
+    post.sourcePath = doc.sourcePath
+  return post
 }
 
 let cachedPosts: Post[] | null = null

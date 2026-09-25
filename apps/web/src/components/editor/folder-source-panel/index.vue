@@ -80,7 +80,7 @@ function handleCloseFolder() {
 async function handleOpenFile(node: any) {
   try {
     const content = await folderSourceStore.readFile(node.path)
-    const title = node.name.replace(/\.md$/i, ``)
+    const title = node.name.replace(/\.(?:md|markdown)$/i, ``)
 
     postStore.addPost(title)
     postStore.updatePostContent(postStore.currentPostId, content)

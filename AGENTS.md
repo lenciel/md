@@ -24,6 +24,7 @@
 | `@doocs/md-cli`  | `packages/md-cli`     | CLI 工具（Express 服务托管构建产物）                                                                  |
 | `@md/mcp-server` | `packages/mcp-server` | MCP 服务，为 AI Agent 暴露接口                                                                        |
 | `@md/api`        | `apps/api`            | 后端 API：账户、云同步、计费、上传代理、分享、主题/组件市场、表情包（Cloudflare Workers + Hono + D1） |
+| `@md/studio`     | `apps/studio`         | 本地博客工作目录服务（Express，托管 studio 构建产物，浏览/编辑 `_posts` 并执行 rake/rsync 命令）      |
 
 独立示例（不在 workspace 内）：`docs/examples/wechat-openapi-worker/` — 微信公众号 OpenAPI 代理 Worker。
 
@@ -37,6 +38,9 @@ pnpm start            # 等同于 `pnpm web dev`
 pnpm run lint         # ESLint --fix 全项目检查
 pnpm run type-check   # vue-tsc 类型检查
 pnpm run build:cli    # 构建 web + 复制到 md-cli + npm pack
+pnpm studio           # 构建 studio 前端并启动本地博客工作目录服务
+pnpm studio:build     # 只构建 studio 用的 web 产物（SERVER_ENV=STUDIO）
+pnpm studio:serve     # 只启动本地博客工作目录服务（读取 apps/studio/studio.config.json）
 pnpm run release:cli  # 通过 scripts/release.js 发布 CLI
 pnpm utools:package   # 打包 uTools 插件
 pnpm run inspector    # node-modules-inspector 查看依赖树

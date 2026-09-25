@@ -13,6 +13,7 @@ import { useUIStore } from '@/stores/ui'
 
 const PostSlider = defineAsyncComponent(() => import('@/components/editor/post-slider/index.vue'))
 const FolderSourcePanel = defineAsyncComponent(() => import('@/components/editor/folder-source-panel/index.vue'))
+const StudioPanel = defineAsyncComponent(() => import('@/components/editor/studio-panel/index.vue'))
 const CssEditor = defineAsyncComponent(() => import('@/components/editor/CssEditor.vue'))
 const RightSlider = defineAsyncComponent(() => import('@/components/editor/RightSlider.vue'))
 const loadEmojiManagerPanel = () => import('@/components/editor/emoji/EmojiManagerPanel.vue')
@@ -25,6 +26,8 @@ const FormulaEditorDialog = defineAsyncComponent(() => import('@/components/edit
 const TemplateDialog = defineAsyncComponent(() => import('@/components/editor/dialogs/TemplateDialog.vue'))
 const CustomComponentDialog = defineAsyncComponent(() => import('@/components/editor/dialogs/CustomComponentDialog.vue'))
 const MarketplaceDialog = defineAsyncComponent(() => import('@/components/editor/dialogs/MarketplaceDialog.vue'))
+const StudioNewPostDialog = defineAsyncComponent(() => import('@/components/editor/dialogs/StudioNewPostDialog.vue'))
+const StudioCommandDialog = defineAsyncComponent(() => import('@/components/editor/dialogs/StudioCommandDialog.vue'))
 
 const uiStore = useUIStore()
 
@@ -32,6 +35,7 @@ const {
   isMobile,
   isOpenPostSlider,
   isOpenFolderPanel,
+  isOpenStudioPanel,
   isOpenRightSlider,
   viewMode,
   enableScrollSync,
@@ -43,6 +47,8 @@ const {
   isShowTemplateDialog,
   isShowComponentDialog,
   isShowMarketplaceDialog,
+  isShowStudioNewPostDialog,
+  isShowStudioCommandDialog,
 } = storeToRefs(uiStore)
 
 const editorPanelCompRef = ref<InstanceType<typeof EditorPanel> | null>(null)
@@ -271,6 +277,15 @@ const isImgLoading = computed(() => unref(editorPanelCompRef.value?.isImgLoading
             <FolderSourcePanel v-if="isOpenFolderPanel" />
           </ResizablePanel>
           <ResizableHandle v-if="!isMobile && isOpenFolderPanel" class="hidden md:block" />
+          <ResizablePanel
+            class="studio-panel"
+            :default-size="!isMobile && isOpenStudioPanel ? 18 : 0"
+            :max-size="!isMobile && isOpenStudioPanel ? 28 : 0"
+            :min-size="!isMobile && isOpenStudioPanel ? 12 : 0"
+          >
+            <StudioPanel v-if="isOpenStudioPanel" />
+          </ResizablePanel>
+          <ResizableHandle v-if="!isMobile && isOpenStudioPanel" class="hidden md:block" />
 
           <ResizablePanel :min-size="30">
             <ResizablePanelGroup direction="horizontal">
@@ -371,6 +386,10 @@ const isImgLoading = computed(() => unref(editorPanelCompRef.value?.isImgLoading
       <CustomComponentDialog v-if="isShowComponentDialog" />
 
       <MarketplaceDialog v-if="isShowMarketplaceDialog" />
+
+      <StudioNewPostDialog v-if="isShowStudioNewPostDialog" />
+
+      <StudioCommandDialog v-if="isShowStudioCommandDialog" />
     </main>
 
     <Footer />
@@ -401,6 +420,10 @@ const isImgLoading = computed(() => unref(editorPanelCompRef.value?.isImgLoading
 }
 
 .folder-panel {
+  transition: flex-grow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio-panel {
   transition: flex-grow 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 

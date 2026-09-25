@@ -1,0 +1,10 @@
+{
+  "root": "/Users/lenciel/Projects/rants/lenciel.github.io",
+  "port": 8790,
+  "postsDir": "_posts",
+  "commands": [
+    { "id": "prepare", "label": "构建站点 (rake prepare_deploy)", "cmd": "rake prepare_deploy", "mode": "run" },
+    { "id": "preview", "label": "本地预览 (rake preview)", "cmd": "rake preview", "mode": "service", "url": "http://localhost:4003" },
+    { "id": "upload", "label": "上传博客 (upblog)", "cmd": "upblog", "mode": "run" }
+  ]
+}

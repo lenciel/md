@@ -15,6 +15,7 @@
 | `@md/config`     | `packages/config`     | 共享 TypeScript 配置                                                                            |
 | `@doocs/md-cli`  | `packages/md-cli`     | 已发布 npm CLI（Express 静态服务）                                                              |
 | `@md/mcp-server` | `packages/mcp-server` | MCP 服务（`render_markdown` 等工具）                                                            |
+| `@md/studio`     | `apps/studio`         | 本地博客工作目录服务（Express，托管 `build:studio` 产物，编辑 `_posts` 并执行 rake/rsync 命令） |
 
 独立示例（不在 pnpm workspace 内）：
 

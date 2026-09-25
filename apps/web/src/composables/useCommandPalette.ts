@@ -115,7 +115,14 @@ export function useCommandPalette() {
         label: t(`menu.localFolder`),
         group: t(`commandPalette.group.panel`),
         keywords: [`文件夹`, `本地`, `folder`, `local`],
-        action: () => { uiStore.isOpenFolderPanel = !uiStore.isOpenFolderPanel },
+        action: () => { uiStore.toggleFolderPanel() },
+      },
+      {
+        id: `toggle-studio-panel`,
+        label: t(`studio.title`),
+        group: t(`commandPalette.group.panel`),
+        keywords: [`工作目录`, `博客`, `studio`, `blog`, `panel`, `面板`],
+        action: () => { uiStore.toggleStudioPanel() },
       },
       {
         id: `open-css-editor`,

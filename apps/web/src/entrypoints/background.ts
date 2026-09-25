@@ -16,6 +16,26 @@ function getExtensionTitle(): string {
   return EXTENSION_TITLE_BY_LOCALE[detectInitialLocale()]
 }
 
+interface StudioCopyResult {
+  ok: boolean
+  reason?: `no-mp-tab` | `relay-failed`
+}
+
+async function relayToMpEditor(content: string): Promise<StudioCopyResult> {
+  const tabs = await browser.tabs.query({ url: [`https://mp.weixin.qq.com/cgi-bin/appmsg*`] })
+  const tab = tabs.find(t => t.id != null)
+  if (!tab?.id)
+    return { ok: false, reason: `no-mp-tab` }
+  try {
+    await browser.tabs.sendMessage(tab.id, { type: `copyToMp`, content })
+    return { ok: true }
+  }
+  catch {
+    // The tab can be gone or the content script not injected yet.
+    return { ok: false, reason: `relay-failed` }
+  }
+}
+
 export default defineBackground({
   type: `module`,
   main() {
@@ -46,6 +66,12 @@ export default defineBackground({
     browser.contextMenus.onClicked.addListener((info, tab) => {
       if (info.menuItemId === `openSidePanel` && tab?.id)
         browser.sidePanel.open({ tabId: tab.id })
+    })
+
+    browser.runtime.onMessage.addListener((message) => {
+      if (message?.type !== `studioCopyToMp`)
+        return
+      return relayToMpEditor(message.content)
     })
   },
 })
