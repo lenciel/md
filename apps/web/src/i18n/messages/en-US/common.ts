@@ -203,6 +203,7 @@ export default {
       default: { label: `Classic`, desc: `` },
       grace: { label: `Grace`, desc: `{'@'}brzhang` },
       simple: { label: `Simple`, desc: `{'@'}okooo5km` },
+      lenciel: { label: `Lenciel`, desc: `{'@'}lenciel` },
     },
     fontFamily: {
       sansSerif: { label: `Sans`, desc: `Font123Abc` },

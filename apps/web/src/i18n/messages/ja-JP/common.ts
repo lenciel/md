@@ -203,6 +203,7 @@ export default {
       default: { label: `クラシック`, desc: `` },
       grace: { label: `Grace`, desc: `{'@'}brzhang` },
       simple: { label: `シンプル`, desc: `{'@'}okooo5km` },
+      lenciel: { label: `Lenciel`, desc: `{'@'}lenciel` },
     },
     fontFamily: {
       sansSerif: { label: `ゴシック`, desc: `Font123Abc` },

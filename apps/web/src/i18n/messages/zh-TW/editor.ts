@@ -421,6 +421,7 @@ export default {
     basedClassic: `基於經典主題`,
     basedGrace: `基於優雅主題`,
     basedSimple: `基於簡潔主題`,
+    basedLenciel: `基於 Lenciel 主題`,
     newTitle: `新建自定義 CSS`,
     newDescription: `請輸入方案名稱，並選擇初始模板`,
     schemeName: `方案名稱`,

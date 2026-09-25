@@ -25,6 +25,7 @@ export const themeOptions = [
   { value: `default`, label: `经典`, desc: `` },
   { value: `grace`, label: `优雅`, desc: `@brzhang` },
   { value: `simple`, label: `简洁`, desc: `@okooo5km` },
+  { value: `lenciel`, label: `Lenciel`, desc: `@lenciel` },
 ] as const
 
 export const fontFamilyOptions = [

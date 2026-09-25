@@ -421,6 +421,7 @@ export default {
     basedClassic: `クラシックテーマベース`,
     basedGrace: `Grace テーマベース`,
     basedSimple: `シンプルテーマベース`,
+    basedLenciel: `Lenciel テーマベース`,
     newTitle: `新規カスタム CSS`,
     newDescription: `スキーム名を入力し、初期テンプレートを選択`,
     schemeName: `スキーム名`,

@@ -109,7 +109,7 @@ const isOpenAddDialog = ref(false)
 const isOpenTipsDialog = ref(false)
 
 const addInputVal = ref(``)
-const baseThemeForNew = ref<'blank' | 'default' | 'grace' | 'simple'>('blank')
+const baseThemeForNew = ref<'blank' | 'default' | 'grace' | 'simple' | 'lenciel'>('blank')
 
 async function addTab() {
   if (!(addInputVal.value).trim()) {
@@ -175,7 +175,7 @@ function addHandler() {
 }
 
 const isOpenViewThemeDialog = ref(false)
-const selectedViewTheme = ref<'default' | 'grace' | 'simple'>('default')
+const selectedViewTheme = ref<'default' | 'grace' | 'simple' | 'lenciel'>('default')
 const highlightedCSS = computed(() => hljs.highlight(themeMap[selectedViewTheme.value], { language: `css` }).value)
 
 const contextMenuTargetId = ref<string | null>(null)
@@ -618,6 +618,9 @@ function exportCurrentTheme() {
                 <SelectItem value="simple">
                   {{ t('cssEditor.basedSimple') }}
                 </SelectItem>
+                <SelectItem value="lenciel">
+                  {{ t('cssEditor.basedLenciel') }}
+                </SelectItem>
               </SelectContent>
             </Select>
             <p class="text-xs text-muted-foreground">
@@ -698,6 +701,9 @@ function exportCurrentTheme() {
               </SelectItem>
               <SelectItem value="simple">
                 {{ getThemeLabel(t, 'simple') }}
+              </SelectItem>
+              <SelectItem value="lenciel">
+                {{ getThemeLabel(t, 'lenciel') }}
               </SelectItem>
             </SelectContent>
           </Select>
