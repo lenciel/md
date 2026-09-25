@@ -6,6 +6,7 @@ import editor from './editor'
 import marketplace from './marketplace'
 import notifications from './notifications'
 import store from './store'
+import studio from './studio'
 import upload from './upload'
 
 export default {
@@ -18,4 +19,5 @@ export default {
   ...ai,
   ...upload,
   ...store,
+  ...studio,
 }

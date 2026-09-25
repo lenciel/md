@@ -16,6 +16,11 @@ export interface Post {
   updateDatetime: Date
   parentId?: string | null
   collapsed?: boolean
+  /**
+   * Repo-relative path of the file backing this post in the local studio
+   * workspace (`_posts/x.markdown`). Absent for regular editor buffers.
+   */
+  sourcePath?: string
 }
 
 export interface PostItemDragState {

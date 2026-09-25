@@ -5,6 +5,7 @@ import { isShareUiEnabled } from '@/services/share/client'
 import { isSyncUiEnabled } from '@/services/sync/client'
 import { useEditorStore } from '@/stores/editor'
 import { useExportStore } from '@/stores/export'
+import { useStudioStore } from '@/stores/studio'
 import { useUIStore } from '@/stores/ui'
 
 const props = withDefaults(defineProps<{
@@ -18,9 +19,10 @@ const { t } = useI18n()
 
 const editorStore = useEditorStore()
 const exportStore = useExportStore()
+const studioStore = useStudioStore()
 const uiStore = useUIStore()
 
-const { isOpenPostSlider, isOpenFolderPanel } = storeToRefs(uiStore)
+const { isOpenPostSlider } = storeToRefs(uiStore)
 const { toggleShowTemplateDialog, toggleShowImportMdDialog, toggleShowSyncDialog, toggleShowEditorStateDialog, toggleShowPreferencesDialog, openShareDialog, openPdfExportDialog } = uiStore
 const showSyncUi = isSyncUiEnabled()
 const showShareUi = isShareUiEnabled()
@@ -68,9 +70,14 @@ function exportEditorContent2PDF() {
       {{ t('menu.file') }}
     </MenubarSubTrigger>
     <MenubarSubContent class="min-w-56">
-      <MenubarItem @click="isOpenFolderPanel = !isOpenFolderPanel">
+      <MenubarItem @click="uiStore.toggleFolderPanel()">
         <FolderOpen class="mr-2 size-4" />
         {{ t('menu.localFolder') }}
+      </MenubarItem>
+
+      <MenubarItem v-if="studioStore.isActive" @click="uiStore.toggleStudioPanel()">
+        <FolderKanban class="mr-2 size-4" />
+        {{ t('studio.title') }}
       </MenubarItem>
 
       <MenubarSeparator />
@@ -177,9 +184,14 @@ function exportEditorContent2PDF() {
       {{ t('menu.file') }}
     </MenubarTrigger>
     <MenubarContent class="min-w-56" align="start">
-      <MenubarItem @click="isOpenFolderPanel = !isOpenFolderPanel">
+      <MenubarItem @click="uiStore.toggleFolderPanel()">
         <FolderOpen class="mr-2 size-4" />
         {{ t('menu.localFolder') }}
+      </MenubarItem>
+
+      <MenubarItem v-if="studioStore.isActive" @click="uiStore.toggleStudioPanel()">
+        <FolderKanban class="mr-2 size-4" />
+        {{ t('studio.title') }}
       </MenubarItem>
 
       <MenubarSeparator />

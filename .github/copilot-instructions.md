@@ -13,7 +13,7 @@ This repository is a pnpm monorepo for **doocs/md**, a WeChat Markdown editor. C
 - **Install:** `pnpm install`
 - **Lint (ESLint + Prettier):** `pnpm run lint`
 - **Type Check:** `pnpm run type-check`
-- **Tests:** `pnpm run test` (`@md/shared`, `@md/core`, `@md/web`, `@md/api`)
+- **Tests:** `pnpm run test` (`@md/shared`, `@md/core`, `@md/web`, `@md/api`, `@md/studio`)
 
 ### Web App (`@md/web`)
 
@@ -24,6 +24,7 @@ This repository is a pnpm monorepo for **doocs/md**, a WeChat Markdown editor. C
 ### Other Workspaces
 
 - **API (`@md/api`):** `pnpm api dev` / `pnpm api test`
+- **Studio (`@md/studio`):** `pnpm studio` (build + serve) / `pnpm studio:serve` / `pnpm studio:build`; config in `apps/studio/studio.config.json`
 - **VS Code (`doocs-md`):** `pnpm vscode compile` / `pnpm vscode package`
 - **CLI (`@doocs/md-cli`):** `pnpm run build:cli`
 - **MCP (`@md/mcp-server`):** `pnpm mcp dev`
@@ -35,6 +36,7 @@ This repository is a pnpm monorepo for **doocs/md**, a WeChat Markdown editor. C
 
 - **`apps/web`**: Vue 3 + Vite + Pinia + Tailwind CSS 4. Web app and browser extension (WXT).
 - **`apps/api`**: Cloudflare Workers + Hono + D1 (auth, cloud sync, billing, upload, share, marketplace, emoji).
+- **`apps/studio`**: Local blog workspace service (Express) that serves the `build:studio` web bundle, lists/edits `_posts/*.md`, and streams `rake`/`rsync` commands.
 - **`apps/vscode`**: VS Code extension (webpack). Marketplace ID: `doocs.doocs-md`.
 - **`apps/utools`**: uTools plugin packaging shell (artifacts from `@md/web`).
 - **`packages/core`**: Markdown renderer (`marked` + custom extensions, theme CSS variables).

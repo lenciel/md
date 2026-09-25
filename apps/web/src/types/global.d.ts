@@ -8,6 +8,9 @@ declare global {
     $cose?: CoseApi
     syncPost?: (data: { thumb: string, title: string, desc: string, content: string }) => void
 
+    /** Set by the local studio server (and the dev-mode Vite plugin) when serving a blog workspace. */
+    __MD_STUDIO__?: { apiBase: string }
+
     __MP_Editor_JSAPI__: {
       invoke: (params: {
         apiName: string

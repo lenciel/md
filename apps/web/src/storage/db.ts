@@ -20,6 +20,8 @@ export interface StoredDocument {
   updateDatetime: string
   parentId?: string | null
   collapsed?: boolean
+  /** Optional (additive) — see `Post.sourcePath`; stored as-is on the schemaless documents store. */
+  sourcePath?: string
 }
 
 export interface KVRecord {

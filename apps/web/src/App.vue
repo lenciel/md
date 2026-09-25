@@ -5,6 +5,7 @@ import ConfirmDialog from '@/components/shared/confirm-dialog/ConfirmDialog.vue'
 import { Toaster } from '@/components/ui/sonner'
 import { useCommandPaletteHotkey } from '@/composables/useCommandPaletteHotkey'
 import { usePreferencesHotkey } from '@/composables/usePreferencesHotkey'
+import { useStudioBootstrap } from '@/composables/useStudioBootstrap'
 import { useUIStore } from '@/stores/ui'
 
 const uiStore = useUIStore()
@@ -13,6 +14,7 @@ const { isDark } = storeToRefs(uiStore)
 usePlatformEnv()
 useAccountSyncBootstrap()
 useDeepLinkImport()
+useStudioBootstrap()
 useCommandPaletteHotkey()
 usePreferencesHotkey()
 </script>

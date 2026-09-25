@@ -1,0 +1,23 @@
+{
+  "name": "@md/studio",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.22.2"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "build:web": "pnpm --filter @md/web run build:studio",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "get-port": "7.2.0",
+    "js-yaml": "^5.4.2"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
+  }
+}

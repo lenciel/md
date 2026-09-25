@@ -328,6 +328,8 @@ declare global {
   const useStepper: typeof import('@vueuse/core').useStepper
   const useStorage: typeof import('@vueuse/core').useStorage
   const useStorageAsync: typeof import('@vueuse/core').useStorageAsync
+  const useStudioBootstrap: typeof import('./src/composables/useStudioBootstrap').useStudioBootstrap
+  const useStudioStore: typeof import('./src/stores/studio').useStudioStore
   const useStyleTag: typeof import('@vueuse/core').useStyleTag
   const useSupported: typeof import('@vueuse/core').useSupported
   const useSwipe: typeof import('@vueuse/core').useSwipe
@@ -410,6 +412,9 @@ declare global {
   // @ts-ignore
   export type { RenderOptions } from './src/stores/render'
   import('./src/stores/render')
+  // @ts-ignore
+  export type { StudioSaveState, StudioCommandStatus, StudioConflict } from './src/stores/studio'
+  import('./src/stores/studio')
   // @ts-ignore
   export type { SyncStatus } from './src/stores/sync'
   import('./src/stores/sync')

@@ -10,14 +10,16 @@ import { defineConfig, loadEnv } from 'vite'
 import { VitePluginRadar } from 'vite-plugin-radar'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
+import { studioDevPlugin } from './plugins/vite-plugin-studio.ts'
 import { utoolsLocalAssetsPlugin } from './plugins/vite-plugin-utools-local-assets.ts'
 
 const isNetlify = process.env.SERVER_ENV === `NETLIFY`
 const isUTools = process.env.SERVER_ENV === `UTOOLS`
+const isStudio = process.env.SERVER_ENV === `STUDIO`
 const isCfWorkers = process.env.CF_WORKERS === `1`
 const isCfPages = process.env.CF_PAGES === `1`
 
-const base = isNetlify || isCfWorkers || isCfPages ? `/` : isUTools ? `./` : `/md/`
+const base = isNetlify || isCfWorkers || isCfPages || isStudio ? `/` : isUTools ? `./` : `/md/`
 
 const cloudflarePlugin = isCfWorkers
   ? (await import(`@cloudflare/vite-plugin`)).cloudflare()
@@ -106,6 +108,7 @@ export default defineConfig(({ mode }) => {
         resolvers: [],
       }),
       isUTools && utoolsLocalAssetsPlugin(),
+      studioDevPlugin(),
     ],
     resolve: {
       alias: { '@': fileURLToPath(new URL(`./src`, import.meta.url)) },

@@ -19,6 +19,31 @@ export const useUIStore = defineStore(`ui`, () => {
 
   const isOpenFolderPanel = store.reactive(addPrefix(`is_open_folder_panel`), false)
 
+  const isOpenStudioPanel = store.reactive(addPrefix(`is_open_studio_panel`), false)
+
+  const isShowStudioNewPostDialog = ref(false)
+  const studioNewPostKind = ref<'post' | 'fragments'>(`post`)
+  const isShowStudioCommandDialog = ref(false)
+  const toggleShowStudioCommandDialog = useToggle(isShowStudioCommandDialog)
+
+  function openStudioNewPostDialog(kind: 'post' | 'fragments') {
+    studioNewPostKind.value = kind
+    isShowStudioNewPostDialog.value = true
+  }
+
+  // Both panels occupy the same left slot, so opening one collapses the other.
+  function toggleStudioPanel() {
+    isOpenStudioPanel.value = !isOpenStudioPanel.value
+    if (isOpenStudioPanel.value)
+      isOpenFolderPanel.value = false
+  }
+
+  function toggleFolderPanel() {
+    isOpenFolderPanel.value = !isOpenFolderPanel.value
+    if (isOpenFolderPanel.value)
+      isOpenStudioPanel.value = false
+  }
+
   const isOpenEmojiManager = store.reactive(addPrefix(`is_open_emoji_manager`), false)
   const toggleShowEmojiManager = useToggle(isOpenEmojiManager)
 
@@ -248,6 +273,14 @@ export const useUIStore = defineStore(`ui`, () => {
     viewMode,
     previewDevice,
     isOpenFolderPanel,
+    isOpenStudioPanel,
+    isShowStudioNewPostDialog,
+    studioNewPostKind,
+    isShowStudioCommandDialog,
+    toggleShowStudioCommandDialog,
+    openStudioNewPostDialog,
+    toggleStudioPanel,
+    toggleFolderPanel,
     isOpenEmojiManager,
     enableImageReupload,
     enableScrollSync,
