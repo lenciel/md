@@ -2,6 +2,7 @@ import type { CollectedHeading, IOpts, RendererAPI } from '@md/shared/types'
 import type { FrontMatterData } from '@md/shared/types/front-matter'
 import type { ReadTimeResults } from '@md/shared/utils/readingTime'
 import type { RendererObject, Tokens } from 'marked'
+import type { LinkAttrs } from '../types/marked-tokens'
 import readingTime from '@md/shared/utils/readingTime'
 import { decodeHTML } from 'entities'
 import hljs from 'highlight.js/lib/core'
@@ -13,6 +14,7 @@ import {
   markedEmoji,
   markedFootnotes,
   markedInfographic,
+  markedLinkAttrs,
   markedMarkup,
   markedMermaid,
   markedPlantUML,
@@ -393,19 +395,20 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
       return `<figure><img src="${href}"${titleAttr}${widthAttr}${heightAttr} alt="${altText}"/>${subText}</figure>`
     },
 
-    link({ href, title, text, tokens }: Tokens.Link): string {
+    link({ href, title, text, tokens, target = `_blank`, rel = `noopener` }: Tokens.Link & LinkAttrs): string {
       const parsedText = this.parser.parseInline(tokens)
+      const anchor = (content: string) => `<a href="${href}" title="${title || text}" target="${target}" rel="${rel}">${content}</a>`
       if (MP_WEIXIN_LINK_REGEX.test(href)) {
-        return `<a href="${href}" title="${title || text}" target="_blank" rel="noopener">${parsedText}</a>`
+        return anchor(parsedText)
       }
       if (href === text) {
         return parsedText
       }
       if (opts.citeStatus) {
         const ref = addFootnote(title || text, href)
-        return `<a href="${href}" title="${title || text}" target="_blank" rel="noopener">${parsedText}<sup>[${ref}]</sup></a>`
+        return anchor(`${parsedText}<sup>[${ref}]</sup>`)
       }
-      return `<a href="${href}" title="${title || text}" target="_blank" rel="noopener">${parsedText}</a>`
+      return anchor(parsedText)
     },
 
     strong({ tokens }: Tokens.Strong): string {
@@ -495,6 +498,7 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
     diagramMessages: opts.diagramMessages,
   })))
   markdownParser.use(markedRuby())
+  markdownParser.use(markedLinkAttrs())
 
   return {
     buildAddition: () => ADDITION_STYLE,

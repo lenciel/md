@@ -53,6 +53,19 @@ export interface RubyToken extends TextToken {
   format: 'basic' | 'basic-hat'
 }
 
+/** Attribute list merged into an inline link token by `markedLinkAttrs`. */
+export interface LinkAttrs {
+  target?: string
+  rel?: string
+  title?: string | null
+}
+
+/** Consumes a kramdown inline attribute list after an inline link; renders nothing. */
+export interface LinkAttrsToken extends TextToken {
+  type: 'linkAttrs'
+  attrs: LinkAttrs
+}
+
 export interface KatexToken extends TextToken {
   type: 'inlineKatex' | 'blockKatex' | 'inlineLatexKatex' | 'blockLatexKatex'
   displayMode?: boolean

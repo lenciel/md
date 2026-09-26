@@ -35,7 +35,10 @@ export function sanitizeHtml(html: string): string {
     },
   )
 
-  html = DOMPurify.sanitize(html, { ADD_TAGS: [`mp-common-profile`] })
+  // `target` is missing from DOMPurify's default attribute allowlist, which would
+  // silently drop the link renderer's `target="_blank"` (and the kramdown IAL
+  // forms of it) from every preview and copy output.
+  html = DOMPurify.sanitize(html, { ADD_TAGS: [`mp-common-profile`], ADD_ATTR: [`target`] })
 
   html = html.replace(
     PROTECTED_SPAN_REGEX,

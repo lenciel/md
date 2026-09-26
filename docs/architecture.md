@@ -52,7 +52,7 @@ Web 端入口：
 2. `useThemeStore` 通过 `applyTheme` 将主题 CSS 写入 `<style>` 标签
 3. 编辑器内容变更经 debounce 后触发 `render()`
 
-扩展列表见 `packages/core/src/extensions/`（Mermaid、PlantUML、KaTeX、Ruby、alert、脚注等）。
+扩展列表见 `packages/core/src/extensions/`（Mermaid、PlantUML、KaTeX、Ruby、alert、脚注、链接 IAL 等）。
 
 ## Web 应用目录约定（`apps/web/src`）
 
