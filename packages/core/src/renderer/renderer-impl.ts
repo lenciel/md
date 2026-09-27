@@ -8,6 +8,7 @@ import { decodeHTML } from 'entities'
 import hljs from 'highlight.js/lib/core'
 import { Marked } from 'marked'
 import {
+  expandJekyllSource,
   getBuiltInRegistry,
   markedAlert,
   markedComponent,
@@ -507,7 +508,7 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
     reset,
     parseFrontMatterAndContent,
     renderMarkdownToHtml(markdown: string) {
-      return markdownParser.parse(markdown) as string
+      return markdownParser.parse(expandJekyllSource(markdown)) as string
     },
     buildReadingTime,
     createContainer(content: string) {

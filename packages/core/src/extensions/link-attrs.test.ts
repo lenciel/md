@@ -45,8 +45,8 @@ describe(`kramdown link IAL`, () => {
     expect(html).toContain(`href="http://a.com" title="链接" target="_blank" rel="noopener">链接</a>{:.external}`)
   })
 
-  it(`leaves block-level IALs such as {:toc} untouched`, () => {
-    expect(render(`{:toc}`)).toContain(`{:toc}`)
+  it(`leaves other block-level IALs literal`, () => {
+    expect(render(`段落内容{:.lead}`)).toContain(`{:.lead}`)
   })
 
   it(`escapes attribute values instead of letting them break out of the tag`, () => {

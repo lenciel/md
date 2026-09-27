@@ -1,4 +1,4 @@
-import type { MarkedExtension, Tokens } from 'marked'
+import type { MarkedExtension, RendererThis, Tokens } from 'marked'
 /**
  * A marked extension to support footnotes syntax.
  * Syntax:
@@ -42,15 +42,19 @@ export function markedFootnotes(): MarkedExtension {
               fnId,
               index,
               text,
+              // Note bodies are markdown in the sources (links, IALs, emphasis), so
+              // they are lexed as inline content instead of being pasted raw.
+              tokens: this.lexer.inlineTokens(text),
             }
           }
           return undefined
         },
-        renderer(token: Tokens.Generic) {
-          const { index, text, fnId } = token
+        renderer(this: RendererThis, token: Tokens.Generic) {
+          const { index, text, fnId, tokens } = token
+          const body = tokens ? this.parser.parseInline(tokens) : text
           const fnInner = `
                 <code>${index}.</code> 
-                <span>${text}</span> 
+                <span>${body}</span> 
                     <a id="fnDef-${fnId}" href="#fnRef-${fnId}" style="color: var(--md-primary-color);">\u21A9\uFE0E</a>
                 <br>`
           if (index === 1) {
