@@ -200,10 +200,11 @@ export default {
   },
   styleOptions: {
     theme: {
-      default: { label: `Classic`, desc: `` },
-      grace: { label: `Grace`, desc: `{'@'}brzhang` },
-      simple: { label: `Simple`, desc: `{'@'}okooo5km` },
-      lenciel: { label: `Lenciel`, desc: `{'@'}lenciel` },
+      'default': { label: `Classic`, desc: `` },
+      'grace': { label: `Grace`, desc: `{'@'}brzhang` },
+      'simple': { label: `Simple`, desc: `{'@'}okooo5km` },
+      'lenciel': { label: `Lenciel`, desc: `{'@'}lenciel` },
+      'wemd-jade': { label: `Jade Reader`, desc: `edit.wemd.app` },
     },
     fontFamily: {
       sansSerif: { label: `Sans`, desc: `Font123Abc` },

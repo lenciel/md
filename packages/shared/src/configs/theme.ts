@@ -10,25 +10,30 @@ export {
 } from './theme-css'
 
 export const themeOptionsMap = {
-  default: {
+  'default': {
     label: `经典`,
     value: `default`,
     desc: ``,
   },
-  grace: {
+  'grace': {
     label: `优雅`,
     value: `grace`,
     desc: `@brzhang`,
   },
-  simple: {
+  'simple': {
     label: `简洁`,
     value: `simple`,
     desc: `@okooo5km`,
   },
-  lenciel: {
+  'lenciel': {
     label: `Lenciel`,
     value: `lenciel`,
     desc: `@lenciel`,
+  },
+  'wemd-jade': {
+    label: `翡翠刊读`,
+    value: `wemd-jade`,
+    desc: `edit.wemd.app`,
   },
 }
 
@@ -52,5 +57,10 @@ export const themeOptions: IConfigOption<ThemeName>[] = [
     label: `Lenciel`,
     value: `lenciel`,
     desc: `@lenciel`,
+  },
+  {
+    label: `翡翠刊读`,
+    value: `wemd-jade`,
+    desc: `edit.wemd.app`,
   },
 ]

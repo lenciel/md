@@ -1,0 +1,360 @@
+/**
+ * MD wemd jade theme (翡翠刊读) — ported from the default theme of edit.wemd.app.
+ *
+ * Design language: 深松墨 ink carries the heading hierarchy, a single emerald
+ * accent anchors each level (刊头压线 / 章节底线 / 翡翠左锚 / 字距标签), and no
+ * shadow, gradient or pseudo-element is used so the result survives a paste into
+ * the WeChat editor. The ink greys are kept as literals; the emerald maps onto
+ * var(--md-primary-color) and links onto var(--md-link-color), so the style
+ * pickers keep working. Type sizes are relative to var(--md-font-size) and the
+ * vertical rhythm scales with var(--md-block-spacing).
+ *
+ * Every theme is layered on top of default.css, so rules also cancel what the
+ * default theme sets on the same element (centred h1/h2, accent-coloured strong,
+ * 0.1em paragraph tracking, `li { display: block }`, …).
+ *
+ * Not ported: the source's footnote / imageflow / callout markup (our renderer
+ * emits different or no elements; GFM alerts below take the callout shape), and
+ * its GitHub-light syntax colours — those stay with the code-block theme option.
+ */
+
+/* ==================== Headings ==================== */
+/* 刊头：翡翠压顶线 + 左对齐大字墨题 */
+h1 {
+  display: block;
+  margin: calc(10px * var(--md-block-spacing)) 0 calc(28px * var(--md-block-spacing));
+  padding: calc(18px * var(--md-block-spacing)) 0 0;
+  border-top: 3px solid var(--md-primary-color);
+  border-bottom: none;
+  color: #12241c;
+  font-size: calc(var(--md-font-size) * 1.88);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+  text-align: left;
+}
+
+/* 章节：深松墨 + 翡翠底线 */
+h2 {
+  display: block;
+  margin: calc(42px * var(--md-block-spacing)) 0 calc(16px * var(--md-block-spacing));
+  padding: 0 0 calc(10px * var(--md-block-spacing));
+  border-bottom: 2px solid color-mix(in srgb, var(--md-primary-color) 22%, #fff);
+  border-radius: 0;
+  background: none;
+  color: #134034;
+  font-size: calc(var(--md-font-size) * 1.38);
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.2px;
+  text-align: left;
+}
+
+/* 翡翠左锚 */
+h3 {
+  margin: calc(30px * var(--md-block-spacing)) 0 calc(12px * var(--md-block-spacing));
+  padding-left: 12px;
+  border-left: 3px solid var(--md-primary-color);
+  color: #134034;
+  font-size: calc(var(--md-font-size) * 1.13);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.2px;
+}
+
+/* 翡翠字距标签 */
+h4 {
+  margin: calc(26px * var(--md-block-spacing)) 0 calc(10px * var(--md-block-spacing));
+  color: var(--md-primary-color);
+  font-size: calc(var(--md-font-size) * 0.88);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+h5 {
+  margin: calc(20px * var(--md-block-spacing)) 0 calc(8px * var(--md-block-spacing));
+  color: #55605a;
+  font-size: calc(var(--md-font-size) * 0.94);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+h6 {
+  margin: calc(18px * var(--md-block-spacing)) 0 calc(8px * var(--md-block-spacing));
+  color: #606b64;
+  font-size: calc(var(--md-font-size) * 0.88);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ==================== Paragraph ==================== */
+p {
+  margin: calc(16px * var(--md-block-spacing)) 0;
+  color: #242a26;
+  letter-spacing: 0.4px;
+}
+
+/* ==================== Lists ==================== */
+/* The source puts the item text in an inner <section> so the marker alone is
+   emerald; our list items have no inner wrapper, so items stay ink and the
+   marker follows (an emerald marker would not survive the WeChat paste). */
+ul,
+ol {
+  padding-left: 24px;
+  color: #242a26;
+}
+
+ul {
+  list-style-type: disc;
+}
+
+ul ul {
+  list-style-type: circle;
+}
+
+ul ul ul {
+  list-style-type: square;
+}
+
+ol {
+  list-style-type: decimal;
+}
+
+li {
+  display: list-item;
+  margin: calc(7px * var(--md-block-spacing)) 0;
+  padding-left: 6px;
+  color: #242a26;
+  line-height: var(--md-line-height);
+}
+
+/* ==================== Blockquote ==================== */
+/* Source levels 1/2/3 (.multiquote-1/2/3) map onto nesting depth. */
+blockquote {
+  margin: calc(24px * var(--md-block-spacing)) 0;
+  padding: calc(16px * var(--md-block-spacing)) 20px;
+  border-left: 3px solid var(--md-primary-color);
+  border-radius: 0 8px 8px 0;
+  background: var(--md-blockquote-background, color-mix(in srgb, var(--md-primary-color) 7%, #fff));
+  box-shadow: none;
+  color: #3f4a44;
+  font-style: normal;
+}
+
+blockquote > p {
+  margin: 0 0 calc(16px * var(--md-block-spacing));
+  color: #3f4a44;
+  font-size: calc(var(--md-font-size) * 0.97);
+  letter-spacing: 0.4px;
+}
+
+blockquote > p:last-child {
+  margin-bottom: 0;
+}
+
+blockquote blockquote {
+  margin: calc(18px * var(--md-block-spacing)) 0;
+  padding: calc(14px * var(--md-block-spacing)) 18px;
+  border-left-color: color-mix(in srgb, var(--md-primary-color) 82%, #000);
+  background: var(--md-blockquote-background, color-mix(in srgb, var(--md-primary-color) 4%, #fff));
+}
+
+blockquote blockquote > p {
+  color: #55605a;
+  font-size: calc(var(--md-font-size) * 0.94);
+}
+
+blockquote blockquote blockquote {
+  margin: calc(14px * var(--md-block-spacing)) 0;
+  padding: calc(12px * var(--md-block-spacing)) 16px;
+  border-left-width: 2px;
+  border-left-color: color-mix(in srgb, var(--md-primary-color) 55%, #fff);
+}
+
+blockquote blockquote blockquote > p {
+  color: #55605a;
+  font-size: calc(var(--md-font-size) * 0.88);
+  text-align: center;
+}
+
+/* ==================== Inline code ==================== */
+.codespan {
+  margin: 0 2px;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--md-primary-color) 16%, #fff);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--md-primary-color) 6%, #fff);
+  color: color-mix(in srgb, var(--md-primary-color) 80%, #000);
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  font-size: 0.88em;
+}
+
+/* ==================== Code blocks ==================== */
+/* Container shape only: token colours come from the code-block theme option. */
+pre.code__pre,
+.hljs.code__pre {
+  margin: calc(10px * var(--md-block-spacing)) 8px;
+  border: 1px solid #e4e9e6;
+  border-radius: 8px;
+}
+
+pre.code__pre > code,
+.hljs.code__pre > code {
+  display: block;
+  padding: 18px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  font-size: calc(var(--md-font-size) * 0.84);
+  line-height: 1.7;
+}
+
+/* ==================== Links ==================== */
+a {
+  border-bottom: 1px solid color-mix(in srgb, var(--md-link-color) 40%, transparent);
+  color: var(--md-link-color);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* ==================== Emphasis ==================== */
+strong {
+  color: #12241c;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+em {
+  color: #242a26;
+  font-style: italic;
+}
+
+em strong {
+  color: #12241c;
+  font-style: italic;
+  font-weight: 700;
+}
+
+.del {
+  color: #606b64;
+  text-decoration: line-through;
+}
+
+u {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+/* ==================== Highlight / super / sub ==================== */
+.markup-highlight {
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: #f6eec6;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+sup,
+sub {
+  color: var(--md-primary-color);
+  font-size: 0.75em;
+}
+
+sup {
+  vertical-align: super;
+}
+
+sub {
+  vertical-align: sub;
+}
+
+.markup-superscript {
+  color: var(--md-primary-color);
+}
+
+/* ==================== Horizontal rules ==================== */
+hr {
+  width: 48px;
+  height: 2px;
+  margin: calc(34px * var(--md-block-spacing)) auto;
+  border: none;
+  background: var(--md-primary-color);
+  /* default.css squashes its own rule with scale(); undo it for a solid bar */
+  transform: none;
+}
+
+/* ==================== Images ==================== */
+img {
+  margin: calc(24px * var(--md-block-spacing)) auto;
+  border-radius: 6px;
+}
+
+figcaption,
+.md-figcaption {
+  margin-top: calc(10px * var(--md-block-spacing));
+  color: #606b64;
+  font-size: 0.88em;
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+/* ==================== Tables ==================== */
+/* 编辑式：去竖线，仅横向分隔，表头翡翠底线 */
+table {
+  margin: 0 0 calc(24px * var(--md-block-spacing));
+  color: #242a26;
+}
+
+th,
+td {
+  padding: 11px 14px;
+  border: none;
+  border-bottom: 1px solid #e4e9e6;
+  background: transparent;
+  color: #242a26;
+  font-size: calc(var(--md-font-size) * 0.94);
+  line-height: 1.6;
+  text-align: left;
+}
+
+th {
+  border-bottom: 2px solid var(--md-primary-color);
+  color: #134034;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ==================== GFM alerts ==================== */
+/* Source callouts are flat; only the tip variant follows the accent, the rest
+   keep default.css's semantic colours. */
+.markdown-alert {
+  margin: calc(26px * var(--md-block-spacing)) 0;
+  padding: calc(18px * var(--md-block-spacing)) 20px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #12241c;
+  font-size: var(--md-font-size);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.alert-icon-note,
+.alert-icon-tip,
+.alert-icon-important,
+.alert-icon-warning,
+.alert-icon-caution {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.markdown-alert-tip {
+  border-left-color: var(--md-primary-color);
+  background: color-mix(in srgb, var(--md-primary-color) 7%, #fff);
+}

@@ -6,14 +6,16 @@ import defaultCSS from './default.css?raw'
 import graceCSS from './grace.css?raw'
 import lencielCSS from './lenciel.css?raw'
 import simpleCSS from './simple.css?raw'
+import wemdJadeCSS from './wemd-jade.css?raw'
 
 export const baseCSSContent = baseCSS
 
 export const themeMap = {
-  default: defaultCSS,
-  grace: graceCSS,
-  simple: simpleCSS,
-  lenciel: lencielCSS,
+  'default': defaultCSS,
+  'grace': graceCSS,
+  'simple': simpleCSS,
+  'lenciel': lencielCSS,
+  'wemd-jade': wemdJadeCSS,
 } as const
 
 export type BuiltinThemeName = keyof typeof themeMap
