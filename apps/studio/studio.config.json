@@ -5,6 +5,7 @@
   "commands": [
     { "id": "prepare", "label": "构建站点 (rake prepare_deploy)", "cmd": "rake prepare_deploy", "mode": "run" },
     { "id": "preview", "label": "本地预览 (rake preview)", "cmd": "rake preview", "mode": "service", "url": "http://localhost:4003" },
-    { "id": "upload", "label": "上传博客 (upblog)", "cmd": "upblog", "mode": "run" }
+    { "id": "upload", "label": "上传博客 (upblog)", "cmd": "upblog", "mode": "run" },
+    { "id": "lint", "label": "Lint 并修复当前文件 (lintmd)", "cmd": "textlint {file} -f pretty-error; textlint --fix {file}", "mode": "run" }
   ]
 }

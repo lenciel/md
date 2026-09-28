@@ -1,10 +1,46 @@
 import { spawn } from 'node:child_process'
 import process from 'node:process'
-import { listPosts } from './workspace.js'
+import { isPostPath, listPosts, StudioError } from './workspace.js'
 
 /** Log buffer cap; older events are dropped while `index` keeps counting. */
 const EVENT_CAP = 5000
 const SIGKILL_DELAY_MS = 5000
+
+/** Config commands may reference the post currently open in the editor. */
+const FILE_PLACEHOLDER = '{file}'
+
+/** Quote for `zsh -lic`: a post name may hold spaces or quotes. */
+function shellQuote(value) {
+  return `'${value.replace(/'/g, `'\\''`)}'`
+}
+
+export function usesFile(cmd) {
+  return typeof cmd === `string` && cmd.includes(FILE_PLACEHOLDER)
+}
+
+/**
+ * Validate the `{file}` reference of a command and return it.
+ *
+ * Throws a `StudioError` so the exec route can answer with a status code before
+ * it commits to a 200 event stream. Returns `null` for commands that ignore the
+ * open file.
+ */
+export function resolveCommandFile(cmd, file) {
+  if (!usesFile(cmd))
+    return null
+  if (typeof file !== `string` || !file)
+    throw new StudioError(400, 'no-active-file')
+  if (!isPostPath(file))
+    throw new StudioError(400, 'bad-path')
+  return file
+}
+
+/** Expand every `{file}` occurrence; the value is quoted, never taken as shell syntax. */
+export function buildCommandLine(cmd, file) {
+  if (!usesFile(cmd))
+    return cmd
+  return cmd.split(FILE_PLACEHOLDER).join(shellQuote(file))
+}
 
 /**
  * commandId -> job. Jobs stay registered after exit so a client that opens the
@@ -128,12 +164,19 @@ async function start(job, { cmd, cwd, postsDir }) {
 /**
  * Start `cmd` unless the id is already running, in which case attach to the live
  * job. Events are buffered, so a late client loses nothing.
+ *
+ * `{file}` is expanded once, at spawn time: attaching to a job that is already
+ * running must not depend on the caller still having the same post open.
  */
-export function runCommand({ id, cmd, cwd, postsDir = '_posts', onEvent }) {
+export function runCommand({ id, cmd, cwd, postsDir = '_posts', file, onEvent }) {
   const existing = jobs.get(id)
   if (existing?.running) {
     return { job: existing, detach: attachJob(id, { from: 0, onEvent }) }
   }
+
+  // Resolved before the job is registered, so a rejected reference cannot leave
+  // a half-started job behind.
+  const commandLine = buildCommandLine(cmd, resolveCommandFile(cmd, file))
 
   const job = {
     commandId: id,
@@ -151,7 +194,7 @@ export function runCommand({ id, cmd, cwd, postsDir = '_posts', onEvent }) {
   jobs.set(id, job)
 
   const detach = attachJob(id, { from: 0, onEvent })
-  start(job, { cmd, cwd, postsDir })
+  start(job, { cmd: commandLine, cwd, postsDir })
 
   return { job, detach }
 }

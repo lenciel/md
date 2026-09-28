@@ -41,6 +41,7 @@ pnpm run build:cli    # 构建 web + 复制到 md-cli + npm pack
 pnpm studio           # 构建 studio 前端并启动本地博客工作目录服务
 pnpm studio:build     # 只构建 studio 用的 web 产物（SERVER_ENV=STUDIO）
 pnpm studio:serve     # 只启动本地博客工作目录服务（读取 apps/studio/studio.config.json）
+                      # 其中的 cmd 支持 {file} 占位符（展开为编辑器当前打开的文章）
 pnpm run release:cli  # 通过 scripts/release.js 发布 CLI
 pnpm utools:package   # 打包 uTools 插件
 pnpm run inspector    # node-modules-inspector 查看依赖树

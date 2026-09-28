@@ -453,6 +453,19 @@ export const useStudioStore = defineStore(`studio`, () => {
     if (!isActive.value)
       return
 
+    const command = commands.value.find(item => item.id === commandId)
+    const file = command?.needsFile ? activePath.value : undefined
+    if (command?.needsFile) {
+      if (!file) {
+        toast.error(t('studio.noActiveFile'))
+        return
+      }
+      // A file-scoped command reads the post from disk, so the editor buffer must
+      // be flushed first; the reload that follows the rewrite would otherwise
+      // discard text the user just typed.
+      await flushActive()
+    }
+
     commandAbort?.abort()
     const controller = new AbortController()
     commandAbort = controller
@@ -466,6 +479,7 @@ export const useStudioStore = defineStore(`studio`, () => {
     try {
       await studioApi.execStream(commandId, {
         from: 0,
+        file,
         signal: controller.signal,
         onEvent: handleCommandEvent,
       })

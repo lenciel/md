@@ -47,6 +47,8 @@ export interface StudioCommand {
   id: string
   label: string
   mode: `run` | `service`
+  /** True when the command's `{file}` placeholder refers to the open post. */
+  needsFile: boolean
   url?: string
 }
 
@@ -104,6 +106,8 @@ export interface StudioWriteInput {
 
 export interface StudioExecOptions {
   from?: number
+  /** Post the command's `{file}` placeholder expands to; required by file-scoped commands. */
+  file?: string
   signal?: AbortSignal
   onEvent: (event: StudioCommandEvent) => void
 }
@@ -150,7 +154,7 @@ async function execStream(commandId: string, options: StudioExecOptions): Promis
   const response = await fetch(`${window.__MD_STUDIO__?.apiBase ?? `/api`}/studio/exec`, {
     method: `POST`,
     headers: buildHeaders(true),
-    body: JSON.stringify({ commandId, from: options.from ?? 0 }),
+    body: JSON.stringify({ commandId, from: options.from ?? 0, file: options.file }),
     signal: options.signal,
   })
   if (!response.ok)

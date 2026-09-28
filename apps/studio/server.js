@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import express from 'express'
-import { attachJob, isRunning, listRunning, runCommand, stopCommand } from './exec.js'
+import { attachJob, isRunning, listRunning, resolveCommandFile, runCommand, stopCommand, usesFile } from './exec.js'
 import {
   buildPostContent,
   computeNextFragments,
@@ -43,7 +43,9 @@ function readIndexHtml(distDir) {
 
 function publicCommand(command) {
   const { id, label, mode, url } = command
-  return url ? { id, label, mode, url } : { id, label, mode }
+  // `needsFile` lets the panel disable the button until a post is open.
+  const base = { id, label, mode, needsFile: usesFile(command.cmd) }
+  return url ? { ...base, url } : base
 }
 
 /** `409` only when the disk copy moved on since the client last read it. */
@@ -173,10 +175,17 @@ export function createStudioApp({ config, distDir }) {
   })
 
   app.post('/api/studio/exec', (req, res) => {
-    const { commandId, from } = req.body ?? {}
+    const { commandId, from, file } = req.body ?? {}
     const command = commands.find(item => item.id === commandId)
     if (!command)
       throw new StudioError(404, 'unknown-command')
+
+    // Attaching to a run that is already going ignores `file`; only a fresh spawn
+    // needs it. Resolve here because once the SSE headers are flushed the
+    // response can no longer carry an error status.
+    const attaching = isRunning(commandId)
+    if (!attaching)
+      resolveCommandFile(command.cmd, file)
 
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -188,13 +197,14 @@ export function createStudioApp({ config, distDir }) {
     const send = event => res.write(`data: ${JSON.stringify(event)}\n\n`)
     const offset = Number.isFinite(Number(from)) ? Number(from) : 0
 
-    const detach = isRunning(commandId)
+    const detach = attaching
       ? attachJob(commandId, { from: offset, onEvent: send })
       : runCommand({
         id: commandId,
         cmd: command.cmd,
         cwd: config.root,
         postsDir,
+        file,
         onEvent: send,
       }).detach
 

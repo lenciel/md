@@ -63,6 +63,15 @@ function isCommandRunning(commandId: string) {
   return studioStore.commandStatus === `running` && studioStore.runningCommandId === commandId
 }
 
+/** File-scoped commands (`{file}` in their config) need an open post. */
+function isCommandBlocked(command: { needsFile: boolean }) {
+  return command.needsFile && !studioStore.activePath
+}
+
+function commandRunTitle(command: { needsFile: boolean }) {
+  return isCommandBlocked(command) ? t(`studio.noActiveFile`) : t(`studio.runCommand`)
+}
+
 async function handleRefresh() {
   await studioStore.init()
   await studioStore.refreshPosts()
@@ -292,7 +301,8 @@ function openPreview(url?: string) {
               variant="outline"
               size="sm"
               class="flex-1 text-xs justify-start"
-              :title="t('studio.runCommand')"
+              :disabled="isCommandBlocked(command)"
+              :title="commandRunTitle(command)"
               @click="handleRunCommand(command.id)"
             >
               <Play class="h-3 w-3 mr-1 shrink-0" />
