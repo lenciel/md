@@ -90,7 +90,7 @@ blockquote {
   border-radius: 3px;
   color: #666;
   background: var(--md-blockquote-background, #f2f2f2);
-  box-shadow: #c2c2c2 0 1px 5px inset;
+  box-shadow: #c2c2c2 0 1px 1px inset;
   font-style: normal;
 }
 
