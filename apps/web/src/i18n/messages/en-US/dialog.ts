@@ -206,6 +206,7 @@ export default {
     publishing: `Publishing`,
     syncFailed: `Sync failed: {error}`,
     syncSuccess: `Sync succeeded`,
+    pictureFailed: `Picture handling failed, nothing was published: {message}`,
     viewDraft: `View draft`,
   },
   preferences: {

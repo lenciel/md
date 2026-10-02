@@ -54,6 +54,8 @@ export interface StudioCommand {
 
 export interface StudioState {
   root: string
+  /** The blog's own author (`_config.yml`), used as the 作者 default when a post has none. */
+  author: string
   postsDir: string
   distOk: boolean
   running: { commandId: string, startedAt: number }[]
@@ -81,6 +83,23 @@ export interface StudioCreateResponse {
   name: string
   content: string
   mtimeMs: number
+}
+
+export interface StudioAssetInfo {
+  /** Canonical repo-relative path; the tag may omit the extension, this never does. */
+  path: string
+  size: number
+  sha256: string
+  mime: string
+}
+
+/** One `.wxmp-upload.json` record; the shape `rake wxmp:upload` writes and reads. */
+export interface StudioWxmpRecord {
+  mode: `uploadimg` | `material`
+  url: string
+  size: number
+  sha256: string
+  media_id?: string
 }
 
 export type StudioCommandEventType = `stdout` | `stderr` | `error` | `changed` | `exit`
@@ -198,6 +217,45 @@ export const studioApi = {
   readFile: (path: string) => request<StudioFileResponse>(
     `/studio/file?path=${encodeURIComponent(path)}`,
     { headers: buildHeaders(false) },
+  ),
+
+  /**
+   * URL prefix for `<img>` sources pointing at blog assets. Empty outside studio, which
+   * is what keeps `{% picture %}` tags literal when no workspace is serving the files.
+   */
+  get assetSrcBase(): string {
+    return window.__MD_STUDIO__ ? `${window.__MD_STUDIO__.apiBase}/studio/asset?path=` : ``
+  },
+
+  /** Size, hash and type of one blog asset, without transferring its bytes. */
+  assetInfo: (path: string) => request<StudioAssetInfo>(
+    `/studio/asset-info?path=${encodeURIComponent(path)}`,
+    { headers: buildHeaders(false) },
+  ),
+
+  async assetBlob(path: string): Promise<Blob> {
+    const response = await fetch(
+      `${window.__MD_STUDIO__?.apiBase ?? `/api`}/studio/asset?path=${encodeURIComponent(path)}`,
+      { headers: buildHeaders(false) },
+    )
+    if (!response.ok)
+      throw await toHttpError(response)
+    return await response.blob()
+  },
+
+  /** The blog manifest shared with `rake wxmp:upload`: what is already on WeChat. */
+  wxmpManifest: () => request<{ manifest: Record<string, StudioWxmpRecord> }>(
+    `/studio/wxmp-manifest`,
+    { headers: buildHeaders(false) },
+  ),
+
+  saveWxmpManifest: (updates: Record<string, StudioWxmpRecord>) => request<{ manifest: Record<string, StudioWxmpRecord> }>(
+    `/studio/wxmp-manifest`,
+    {
+      method: `PUT`,
+      headers: buildHeaders(true),
+      body: JSON.stringify({ updates }),
+    },
   ),
 
   writeFile: (input: StudioWriteInput) => request<StudioWriteResponse>(`/studio/file`, {

@@ -54,6 +54,7 @@ export const useStudioStore = defineStore(`studio`, () => {
 
   const isActive = ref(false)
   const root = ref(``)
+  const siteAuthor = ref(``)
   const distOk = ref(false)
   const commands = ref<StudioCommand[]>([])
   const posts = ref<StudioPostListItem[]>([])
@@ -149,6 +150,7 @@ export const useStudioStore = defineStore(`studio`, () => {
     try {
       const [state, postsResponse] = await Promise.all([studioApi.state(), studioApi.posts()])
       root.value = state.root
+      siteAuthor.value = state.author
       distOk.value = state.distOk
       commands.value = state.commands
       posts.value = postsResponse.posts
@@ -519,6 +521,7 @@ export const useStudioStore = defineStore(`studio`, () => {
   return {
     isActive,
     root,
+    siteAuthor,
     distOk,
     commands,
     posts,

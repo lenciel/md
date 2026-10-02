@@ -136,6 +136,11 @@ export default {
       apiKeyRequired: `API Key 不能為空`,
       uploadPresetRequired: `未填寫 apiSecret 時必須提供上傳預設名`,
     },
+    picture: {
+      notFound: `檔案不存在`,
+      convertFailed: `圖片格式轉換失敗`,
+      failed: `以下圖片無法上傳到公眾號，已中止：{items}`,
+    },
     provider: {
       accessTokenFailed: `獲取 access_token 失敗`,
       uploadNoUrl: `上傳失敗，未獲取到URL`,

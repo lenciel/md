@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
@@ -37,6 +38,151 @@ export function resolvePostPath(root, rel) {
 
   // `postDir` is fixed to `_posts` and `rel` holds a bare file name, so no traversal is possible.
   return path.join(root, rel)
+}
+
+/** Only files under `downloads/` (the blog's asset tree) are reachable through the API. */
+const ASSET_ROOT = 'downloads'
+
+// jekyll_picture_tag resolves a tag path without its extension (`{% picture /downloads/x %}`),
+// so the tag path acts as a prefix; these are the formats the blog stores.
+const ASSET_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+const ASSET_MIME_TYPES = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+}
+
+/** The blog manifest the `rake wxmp:upload` task keeps; both tools share this one file. */
+export const WXMP_MANIFEST_FILE = '.wxmp-upload.json'
+
+export function isAssetPath(rel) {
+  if (typeof rel !== 'string' || !rel.startsWith(`${ASSET_ROOT}/`))
+    return false
+
+  // Every segment must be a real name: `..` would walk out of the asset tree, and an
+  // empty segment would let `downloads//x` collapse into an unexpected directory.
+  return rel.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..')
+}
+
+export function resolveAssetPath(root, rel) {
+  if (typeof rel !== 'string' || rel.includes('\0') || !isAssetPath(rel))
+    throw new StudioError(400, 'bad-path')
+
+  // `rel` starts with `downloads/` and the regex admits no `.` segment or leading slash,
+  // so the joined path cannot leave `root`.
+  return path.join(root, rel)
+}
+
+function sniffAssetMime(header) {
+  if (header[0] === 0x89 && header.toString('latin1', 1, 4) === 'PNG')
+    return 'image/png'
+  if (header[0] === 0xFF && header[1] === 0xD8 && header[2] === 0xFF)
+    return 'image/jpeg'
+  if (header.toString('latin1', 0, 6) === 'GIF87a' || header.toString('latin1', 0, 6) === 'GIF89a')
+    return 'image/gif'
+  if (header.toString('latin1', 0, 4) === 'RIFF' && header.toString('latin1', 8, 12) === 'WEBP')
+    return 'image/webp'
+  return null
+}
+
+/** Resolve a tag path to a real file, probing extensions and reporting the canonical path. */
+export async function findAssetFile(root, rel) {
+  const candidates = path.extname(rel) ? [rel] : ASSET_EXTENSIONS.map(ext => `${rel}${ext}`)
+
+  for (const candidate of candidates) {
+    const absPath = resolveAssetPath(root, candidate)
+    try {
+      const stat = await fs.stat(absPath)
+      if (stat.isFile())
+        return { absPath, rel: candidate, size: stat.size }
+    }
+    catch (err) {
+      if (err.code !== 'ENOENT')
+        throw err
+    }
+  }
+
+  throw new StudioError(404, 'not-found')
+}
+
+/** Byte-level facts for one asset, as the manifest and the uploader need them. */
+export async function readAssetFile(root, rel) {
+  const file = await findAssetFile(root, rel)
+  const buffer = await fs.readFile(file.absPath)
+
+  return {
+    rel: file.rel,
+    size: file.size,
+    sha256: createHash('sha256').update(buffer).digest('hex'),
+    // The blog holds images whose extension lies about their content, and WeChat goes
+    // by the bytes, so the sniffed type is the only trustworthy one.
+    mime: sniffAssetMime(buffer.subarray(0, 12)) ?? ASSET_MIME_TYPES[path.extname(file.absPath)] ?? 'application/octet-stream',
+    buffer,
+  }
+}
+
+/**
+ * The blog declares its author once in `_config.yml`; posts rarely repeat it, and the
+ * editor uses it as the 作者 default when the post's front matter has none.
+ */
+export async function readSiteAuthor(root) {
+  try {
+    const config = loadYaml(await fs.readFile(path.join(root, '_config.yml'), 'utf8'))
+    return config && typeof config === 'object' && typeof config.author === 'string' ? config.author.trim() : ''
+  }
+  catch {
+    return ''
+  }
+}
+
+export async function readWxmpManifest(root) {
+  let raw
+  try {
+    raw = await fs.readFile(path.join(root, WXMP_MANIFEST_FILE), 'utf8')
+  }
+  catch (err) {
+    if (err.code === 'ENOENT')
+      return {}
+    throw err
+  }
+
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  }
+  catch {
+    throw new StudioError(500, 'bad-manifest')
+  }
+}
+
+/**
+ * Merge upload records into the blog manifest, byte-compatible with `rake wxmp:upload`:
+ * sorted paths, 2-space JSON, trailing newline, and Ruby's field order per entry.
+ */
+export async function writeWxmpManifest(root, updates) {
+  const manifest = await readWxmpManifest(root)
+
+  for (const [rel, update] of Object.entries(updates ?? {})) {
+    if (!isAssetPath(rel))
+      throw new StudioError(400, 'bad-path')
+
+    const { mode, url, size, sha256, media_id: mediaId } = update ?? {}
+    if (mode !== 'material' || typeof url !== 'string' || !url || !Number.isFinite(size) || typeof sha256 !== 'string')
+      throw new StudioError(400, 'bad-entry')
+
+    manifest[rel] = mediaId
+      ? { mode, url, size, sha256, media_id: mediaId }
+      : { mode, url, size, sha256 }
+  }
+
+  const sorted = {}
+  for (const key of Object.keys(manifest).sort())
+    sorted[key] = manifest[key]
+
+  await writeFilePreservingMode(path.join(root, WXMP_MANIFEST_FILE), `${JSON.stringify(sorted, null, 2)}\n`)
+  return sorted
 }
 
 export function parseFrontMatterTitle(text) {

@@ -3,6 +3,7 @@
 //
 //   {% sidenote 'id' 'text' %}                 -> [^id] + an appended [^id]: text
 //   {% highlight lang %}...{% endhighlight %}  -> a fenced code block
+//   {% picture path --alt x %}                 -> a <figure> around the repo asset
 //   {% raw %}...{% endraw %}                   -> delimiters dropped, body kept
 //   - TOC / {:toc}                             -> [TOC]
 //
@@ -13,6 +14,7 @@
 //
 // `{% raw %}` shields Liquid tags only. kramdown syntax such as `{:toc}` is still
 // expanded by Jekyll inside those blocks, so it is rewritten everywhere.
+import type { IOpts } from '@md/shared/types'
 import { escapeHtml } from '../utils/basicHelpers'
 
 const SIDENOTE_TAG_REGEX = /\{%\s*sidenote\s([\s\S]*?)%\}/g
@@ -26,6 +28,18 @@ const RAW_DELIMITER_REGEX = /^\{%\s*(?:end)?raw\s*%\}$/
 const TOC_MARKER_REGEX = /^[ \t]*[-*+][ \t]+TOC[ \t]*\r?\n[ \t]*\{:toc\}[ \t]*$/gm
 const TOC_TOKEN_REGEX = /\{:toc\}/g
 
+// jekyll_picture_tag. The optional tail is the blog's caption idiom: a trailing `\`
+// hard break, then a `<small>` line, which becomes the figure's caption. The tail
+// stays inside the optional group so a tag without a caption keeps its line ending
+// (consuming it would glue the next paragraph onto the figure's raw HTML block).
+const PICTURE_TAG_REGEX = /\{%\s*picture\s([^%]*)%\}(?:\\?\s*<small>([\s\S]*?)<\/small>)?/g
+// `--alt text`, `--img width="178" height="248" class="left"`: each value runs to the next flag.
+const PICTURE_FLAG_REGEX = /--([a-z]+)\s+/g
+const PICTURE_SIZE_REGEX = /(width|height)\s*=\s*['"]?(\d+)/g
+// Captions are pinned rather than themed: the blog's `<small>` line is 12px italic
+// under the image, and `legend`-driven figcaptions are unrelated to it.
+const PICTURE_CAPTION_STYLE = `text-align: center; font-size: 12px; font-style: italic;`
+
 /** Shell-like split of the tag body, mirroring the Liquid plugin's `shellsplit`. */
 function sidenoteArgs(raw: string): string[] {
   const args: string[] = []
@@ -34,6 +48,57 @@ function sidenoteArgs(raw: string): string[] {
     args.push(match[1] === undefined ? value : value.replace(/\\(.)/g, `$1`))
   }
   return args
+}
+
+/** Flag values in tag order, so repeated flags keep the tag's own precedence. */
+function pictureArgs(rawArgs: string): Record<string, string> {
+  const flags = [...rawArgs.matchAll(PICTURE_FLAG_REGEX)]
+  const args: Record<string, string> = {}
+
+  flags.forEach((flag, index) => {
+    const start = (flag.index ?? 0) + flag[0].length
+    const end = index + 1 < flags.length ? flags[index + 1].index : rawArgs.length
+    args[flag[1]] = rawArgs.slice(start, end).trim()
+  })
+
+  return args
+}
+
+/** `--alt "two words"` / `--alt 'two words'` / `--alt two` are all one value. */
+function unquote(value: string): string {
+  const trimmed = value.trim()
+  const quote = trimmed[0]
+  const quoted = (quote === `"` || quote === `'`) && trimmed[trimmed.length - 1] === quote && trimmed.length > 1
+  return quoted ? trimmed.slice(1, -1) : trimmed
+}
+
+/**
+ * jekyll_picture_tag resolves a repo-relative path, so the emitted `<img>` points at
+ * whatever serves those bytes locally; `srcBase` carries the query prefix the host
+ * (studio) expects. The original path stays on the element for the publish step,
+ * which swaps in the uploaded asset URL.
+ */
+function pictureFigure(body: string, caption: string | undefined, srcBase: string): string {
+  const trimmed = body.trim()
+  const cut = trimmed.search(/\s/)
+  const rel = (cut === -1 ? trimmed : trimmed.slice(0, cut)).replace(/^\/+/, ``)
+  if (!rel)
+    return ``
+
+  const args = pictureArgs(cut === -1 ? `` : trimmed.slice(cut))
+  const text = caption?.trim() ?? ``
+  const altArg = unquote(args.alt ?? ``)
+  const alt = altArg || text || rel.split(`/`).pop() || rel
+  const captionHtml = text
+    ? `<figcaption class="figcaption" style="${PICTURE_CAPTION_STYLE}">${escapeHtml(text)}</figcaption>`
+    : ``
+  // `width`/`height` only: the blog's `class` hints (e.g. `left`) have no WeChat counterpart.
+  const sizes = [...(args.img ?? ``).matchAll(PICTURE_SIZE_REGEX)]
+    .map(match => ` ${match[1]}="${match[2]}"`)
+    .join(``)
+  // The trailing blank line closes the raw HTML block, so whatever follows the tag
+  // stays its own markdown block instead of being swallowed as literal HTML text.
+  return `<figure><img data-picture-path="${escapeHtml(rel)}" src="${escapeHtml(srcBase + encodeURIComponent(rel))}" alt="${escapeHtml(alt)}"${sizes}>${captionHtml}</figure>\n\n`
 }
 
 /**
@@ -68,8 +133,13 @@ function blockquoteFooter(args: string): string {
  * Rewrites every Jekyll construct in `markdown`. Sidenote tags become footnote
  * references numbered in document order, with their definitions appended so the
  * footnote extension renders them like any other footnote.
+ *
+ * `{% picture %}` is rewritten only when `opts.pictureSrcBase` is set — that base
+ * is served by the local workspace, so without it the tag has no image to point at
+ * and is left for the reader (and for the blog's own Jekyll build).
  */
-export function expandJekyllSource(markdown: string): string {
+export function expandJekyllSource(markdown: string, opts: Pick<IOpts, `pictureSrcBase`> = {}): string {
+  const pictureSrcBase = opts.pictureSrcBase
   const definitions: string[] = []
   const defined = new Set<string>()
   let inRaw = false
@@ -112,6 +182,12 @@ export function expandJekyllSource(markdown: string): string {
             definitions.push(`[^${id}]: ${text ?? ``}`)
           }
           return `[^${id}]`
+        })
+        .replace(PICTURE_TAG_REGEX, (tag, tagBody: string, caption?: string) => {
+          if (!pictureSrcBase)
+            return tag
+
+          return pictureFigure(tagBody, caption, pictureSrcBase)
         })
     })
     .join(``)

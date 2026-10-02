@@ -21,8 +21,13 @@ export const useThemeStore = defineStore(`theme`, () => {
     {},
   )
 
+  // Stored settings win over the theme's defaults, but are merged on top of them:
+  // entries written by older versions can be missing fields, and the defaults are
+  // per-theme (see defaultPerThemeSettings).
   const currentSettings = computed<PerThemeSettings>(() => {
-    return themeSettings.value[theme.value] ?? defaultPerThemeSettings()
+    const defaults = defaultPerThemeSettings(theme.value)
+    const stored = themeSettings.value[theme.value]
+    return stored ? { ...defaults, ...stored } : defaults
   })
 
   const primaryColor = computed<string>({
@@ -40,25 +45,23 @@ export const useThemeStore = defineStore(`theme`, () => {
     set: (v: string) => { setThemeField(`fontSize`, v) },
   })
 
-  // Settings persisted before these options existed have no value stored, so the
-  // getters fall back to the default instead of leaving the picker unselected.
   const lineHeight = computed<string>({
-    get: () => currentSettings.value.lineHeight ?? defaultStyleConfig.lineHeight,
+    get: () => currentSettings.value.lineHeight,
     set: (v: string) => { setThemeField(`lineHeight`, v) },
   })
 
   const blockSpacing = computed<string>({
-    get: () => currentSettings.value.blockSpacing ?? defaultStyleConfig.blockSpacing,
+    get: () => currentSettings.value.blockSpacing,
     set: (v: string) => { setThemeField(`blockSpacing`, v) },
   })
 
   const linkColor = computed<string>({
-    get: () => currentSettings.value.linkColor ?? defaultStyleConfig.linkColor,
+    get: () => currentSettings.value.linkColor,
     set: (v: string) => { setThemeField(`linkColor`, v) },
   })
 
   const blockquoteBackground = computed<string>({
-    get: () => currentSettings.value.blockquoteBackground ?? defaultStyleConfig.blockquoteBackground,
+    get: () => currentSettings.value.blockquoteBackground,
     set: (v: string) => { setThemeField(`blockquoteBackground`, v) },
   })
 
@@ -84,7 +87,7 @@ export const useThemeStore = defineStore(`theme`, () => {
 
   function setThemeField<K extends keyof PerThemeSettings>(key: K, value: PerThemeSettings[K]) {
     const t = theme.value
-    const existing = themeSettings.value[t] ?? defaultPerThemeSettings()
+    const existing = themeSettings.value[t] ?? defaultPerThemeSettings(t)
     themeSettings.value = {
       ...themeSettings.value,
       [t]: { ...existing, [key]: value },
@@ -110,7 +113,7 @@ export const useThemeStore = defineStore(`theme`, () => {
   const resetStyle = () => {
     themeSettings.value = {
       ...themeSettings.value,
-      [theme.value]: defaultPerThemeSettings(),
+      [theme.value]: defaultPerThemeSettings(theme.value),
     }
     isCiteStatus.value = defaultStyleConfig.isCiteStatus
     isCountStatus.value = defaultStyleConfig.isCountStatus

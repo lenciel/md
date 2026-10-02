@@ -147,3 +147,76 @@ describe(`jekyll source rewrites`, () => {
     expect(html).toContain(`注解`)
   })
 })
+
+describe(`picture tags`, () => {
+  // The tag carries a repo path, so only a host that can serve those bytes (studio)
+  // turns it into an image; anywhere else the tag stays as written.
+  const SRC_BASE = `/api/studio/asset?path=`
+
+  function renderPicture(md: string): string {
+    return renderMarkdown(md, initRenderer({ pictureSrcBase: SRC_BASE })).html
+  }
+
+  it(`stays literal while no asset source is configured`, () => {
+    const markdown = `{% picture /downloads/images/a.png --alt a %}`
+    expect(expandJekyllSource(markdown)).toBe(markdown)
+    expect(expandJekyllSource(markdown, {})).toBe(markdown)
+  })
+
+  it(`expands into a figure whose image points at the asset source`, () => {
+    const html = renderPicture(`{% picture /downloads/images/2026_10/us_economic_1.png --alt us_economic_1.png %}`)
+
+    expect(html).not.toContain(`{% picture`)
+    expect(html).toContain(`<figure>`)
+    expect(html).toContain(`data-picture-path="downloads/images/2026_10/us_economic_1.png"`)
+    expect(html).toContain(`src="${SRC_BASE}downloads%2Fimages%2F2026_10%2Fus_economic_1.png"`)
+    expect(html).toContain(`alt="us_economic_1.png"`)
+  })
+
+  it(`turns the following small line into the caption`, () => {
+    const html = renderPicture([
+      `{% picture /downloads/images/a.png --alt a %}\\`,
+      `<small>图 1. 美股历史新高</small>`,
+      ``,
+      `正文。`,
+    ].join(`\n`))
+
+    expect(html).toContain(`<figcaption`)
+    expect(html).toContain(`图 1. 美股历史新高`)
+    expect(html).toContain(`font-size: 12px`)
+    expect(html).toContain(`text-align: center`)
+    expect(html).toContain(`font-style: italic`)
+    expect(html).not.toContain(`<small>`)
+    // The caption must not swallow the paragraph that follows the tag pair.
+    expect(html).toContain(`>正文。`)
+  })
+
+  it(`keeps the paragraph after a caption-less tag separate`, () => {
+    const html = renderPicture(`{% picture /downloads/images/a.png %}\n正文。`)
+
+    expect(html).toContain(`data-picture-path="downloads/images/a.png"`)
+    expect(html).toContain(`alt="a.png"`)
+    expect(html).not.toContain(`<figcaption`)
+    expect(html).toContain(`>正文。`)
+  })
+
+  it(`forwards width and height but drops the blog's layout classes`, () => {
+    const html = renderPicture(`{% picture /downloads/images/wengan.jpg --img width="178" height="248" class="left" %}`)
+
+    expect(html).toContain(`width="178"`)
+    expect(html).toContain(`height="248"`)
+    expect(html).not.toContain(`class="left"`)
+  })
+
+  it(`prefers the caption text as alt when the tag has no --alt`, () => {
+    const html = renderPicture(`{% picture /downloads/images/a.png %}\n<small>一句说明</small>`)
+
+    expect(html).toContain(`alt="一句说明"`)
+    expect(html).toContain(`一句说明</figcaption>`)
+  })
+
+  it(`leaves picture tags inside {% raw %} literal`, () => {
+    expect(expandJekyllSource(`{% raw %}{% picture /a.png %}{% endraw %}`, { pictureSrcBase: SRC_BASE }))
+      .toBe(`{% picture /a.png %}`)
+  })
+})

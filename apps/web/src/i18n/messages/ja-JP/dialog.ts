@@ -206,6 +206,7 @@ export default {
     publishing: `公開中`,
     syncFailed: `同期に失敗しました: {error}`,
     syncSuccess: `同期に成功しました`,
+    pictureFailed: `画像の処理に失敗したため、公開しませんでした：{message}`,
     viewDraft: `下書きを表示`,
   },
   preferences: {

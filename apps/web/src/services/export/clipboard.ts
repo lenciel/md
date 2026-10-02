@@ -6,6 +6,7 @@ import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
 import { createEmptyNode, modifyHtmlStructure, promoteSvgHtmlLabels, sanitizeHtmlCssForJuice, solveWeChatImage, stripFontFamilyForJuiceFallback, stripInvalidCssForJuice } from './clipboard-dom'
 import { getStylesToAdd } from './share-styles'
+import { resolvePictureImages } from './wechat-picture'
 import { prepareDiagramSvgsForWeChat, prepareMathFormulasForWeChat, sanitizeSvgsForWeChat } from './wechat-svg'
 
 export { modifyHtmlStructure, solveWeChatImage } from './clipboard-dom'
@@ -68,6 +69,9 @@ export async function processClipboardContent(primaryColor: string) {
   try {
     const clipboardDiv = outputElement.cloneNode(true) as HTMLElement
     stripUnresolvedAsyncPlaceholders(clipboardDiv)
+    // Blog `{% picture %}` figures carry a repo path; this is where they become assets
+    // WeChat can serve, reusing anything `rake wxmp:upload` already sent.
+    await resolvePictureImages(clipboardDiv)
     prepareDiagramSvgsForWeChat(clipboardDiv)
     await inlineEmojiImagesAsBase64(clipboardDiv)
 

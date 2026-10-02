@@ -47,12 +47,18 @@ export const renderMarkdownInputSchema = z.object({
     .string()
     .regex(/^\d+px$/, `Must be a pixel size like 16px`)
     .optional()
-    .describe(`Base font size (e.g. 16px). Use list_font_sizes for presets.`),
+    .describe(
+      `Base font size (e.g. 16px). Use list_font_sizes for presets. `
+      + `Defaults to the selected theme's own size: 18px for lenciel (its blog source runs the body at 18px), 16px otherwise.`,
+    ),
   lineHeight: z
     .string()
     .regex(/^\d+(?:\.\d+)?$/, `Must be a unitless number like 1.75`)
     .optional()
-    .describe(`Body line height, unitless (e.g. 1.75). Use list_spacing_options for presets.`),
+    .describe(
+      `Body line height, unitless (e.g. 1.75). Use list_spacing_options for presets. `
+      + `Defaults to the selected theme's own value (1.65 for lenciel, 1.75 otherwise).`,
+    ),
   blockSpacing: z
     .string()
     .regex(/^\d+(?:\.\d+)?$/, `Must be a unitless number like 1`)
@@ -410,8 +416,8 @@ server.registerTool(
       { name: `theme`, type: `'default' | 'grace' | 'simple' | 'lenciel'`, default: `default`, description: `Visual theme.` },
       { name: `primaryColor`, type: `string (hex)`, default: `#0F4C81`, description: `Primary accent color via --md-primary-color.` },
       { name: `fontFamily`, type: `string`, default: `system sans-serif stack`, description: `CSS font-family. See list_fonts.` },
-      { name: `fontSize`, type: `string (px)`, default: `16px`, description: `Base font size. See list_font_sizes.` },
-      { name: `lineHeight`, type: `string (unitless)`, default: `1.75`, description: `Body line height. See list_spacing_options.` },
+      { name: `fontSize`, type: `string (px)`, default: `theme default: 16px, 18px for lenciel`, description: `Base font size. See list_font_sizes.` },
+      { name: `lineHeight`, type: `string (unitless)`, default: `theme default: 1.75, 1.65 for lenciel`, description: `Body line height. See list_spacing_options.` },
       { name: `blockSpacing`, type: `string (unitless)`, default: `1`, description: `Multiplier for the theme's vertical block margins. See list_spacing_options.` },
       { name: `linkColor`, type: `string (colour)`, default: `#576b95`, description: `Link colour. See list_color_options.` },
       { name: `blockquoteBackground`, type: `string (colour)`, default: `default`, description: `Blockquote background; "default" keeps the theme's own. See list_color_options.` },

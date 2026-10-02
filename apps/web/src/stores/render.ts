@@ -171,6 +171,7 @@ export const useRenderStore = defineStore(`render`, () => {
   const initRendererInstance = async (options?: {
     isMacCodeBlock?: boolean
     isShowLineNumber?: boolean
+    pictureSrcBase?: string
   }) => {
     initPromise ??= import(`@md/core/renderer`).then(({ initRenderer }) => {
       renderer = initRenderer(options || {})

@@ -37,6 +37,12 @@ export interface IOpts {
   isMacCodeBlock?: boolean
   isShowLineNumber?: boolean
   themeMode?: 'light' | 'dark'
+  /**
+   * URL prefix serving repo-relative blog assets (`/api/studio/asset?path=`). Set
+   * only when the local workspace runs, so `{% picture %}` tags — which carry a
+   * repo path, not a URL — expand into figures instead of staying literal text.
+   */
+  pictureSrcBase?: string
   /** Custom component registry */
   components?: ComponentRegistry
   /** Async diagram load/error copy (injected by locale on Web) */

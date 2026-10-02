@@ -1,4 +1,6 @@
 // types/chrome.d.ts
+import type { WechatArticle } from '@/types/wechat'
+
 declare namespace chrome {
   namespace runtime {
     const id: string | undefined
@@ -26,13 +28,13 @@ async function getCurrentTab() {
   return tab
 }
 window.addEventListener(`copyToMp`, (e) => {
-  const customEvent = e as CustomEvent
+  const customEvent = e as CustomEvent<WechatArticle>
   if (!isInExtension)
     return
   getCurrentTab().then((tab) => {
     chrome.tabs.sendMessage(tab.id!, {
       type: `copyToMp`,
-      content: customEvent.detail.content,
+      article: customEvent.detail,
     })
   })
 })

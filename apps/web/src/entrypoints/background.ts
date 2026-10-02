@@ -1,3 +1,4 @@
+import type { WechatArticle } from '@/types/wechat'
 import { browser, defineBackground } from '#imports'
 import { detectInitialLocale } from '@/i18n/detect'
 import enUS from '@/i18n/messages/en-US/store'
@@ -21,13 +22,20 @@ interface StudioCopyResult {
   reason?: `no-mp-tab` | `relay-failed`
 }
 
-async function relayToMpEditor(content: string): Promise<StudioCopyResult> {
+/**
+ * The article the app last handed over. cose opens its own editor tab, so the push often
+ * finds no tab to relay to; the queued copy is then picked up by that editor page instead.
+ * In-memory on purpose: the value is only meaningful for the seconds around a publish.
+ */
+let pendingArticle: WechatArticle | null = null
+
+async function relayToMpEditor(article: WechatArticle, metadataOnly: boolean): Promise<StudioCopyResult> {
   const tabs = await browser.tabs.query({ url: [`https://mp.weixin.qq.com/cgi-bin/appmsg*`] })
   const tab = tabs.find(t => t.id != null)
   if (!tab?.id)
     return { ok: false, reason: `no-mp-tab` }
   try {
-    await browser.tabs.sendMessage(tab.id, { type: `copyToMp`, content })
+    await browser.tabs.sendMessage(tab.id, { type: `copyToMp`, article, metadataOnly })
     return { ok: true }
   }
   catch {
@@ -69,9 +77,17 @@ export default defineBackground({
     })
 
     browser.runtime.onMessage.addListener((message) => {
+      if (message?.type === `mdPendingArticle`)
+        return Promise.resolve(pendingArticle)
+      // The editor consumed it: a stale article must not be typed into the next draft.
+      if (message?.type === `mdPendingArticleApplied`) {
+        pendingArticle = null
+        return Promise.resolve(true)
+      }
       if (message?.type !== `studioCopyToMp`)
         return
-      return relayToMpEditor(message.content)
+      pendingArticle = message.article ?? null
+      return relayToMpEditor(message.article, message.metadataOnly === true)
     })
   },
 })

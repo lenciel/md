@@ -131,7 +131,7 @@ export async function migrateLegacyThemeSettings(engine: IndexedDBEngine): Promi
     ? parseStoredValue(existingMapRaw, {} as PerThemeSettingsMap)
     : {}
 
-  const defaults = defaultPerThemeSettings()
+  const defaults = defaultPerThemeSettings(initialTheme)
   const settings: PerThemeSettings = { ...existingMap[initialTheme] ?? defaults }
 
   const legacyFont = legacyGet(`fonts`)

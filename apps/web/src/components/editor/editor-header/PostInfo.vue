@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { Post, PostAccount } from '@md/shared/types'
+import type { WechatArticle } from '@/types/wechat'
 import { Check, ChevronDown, ChevronRight, Info, Loader2, Minus } from '@lucide/vue'
 import { CheckboxIndicator, CheckboxRoot, Primitive } from 'reka-ui'
+import { articleMetadata, firstContentImage, resolveWechatArticle } from '@/services/export/wechat-article'
 import { useEditorStore } from '@/stores/editor'
 import { useRenderStore } from '@/stores/render'
+import { useStudioStore } from '@/stores/studio'
 import { useUIStore } from '@/stores/ui'
 
 defineOptions({
@@ -16,6 +19,11 @@ const { editor } = storeToRefs(editorStore)
 
 const renderStore = useRenderStore()
 const { output } = storeToRefs(renderStore)
+
+const studioStore = useStudioStore()
+
+/** The prefill the dialog starts from, so a cover the user edited is never overwritten. */
+const autoThumb = ref(``)
 
 const uiStore = useUIStore()
 const { isMobile } = storeToRefs(uiStore)
@@ -110,21 +118,30 @@ async function prePost() {
   }
   const accounts = allAccounts.value.filter(a => ![`ipfs`].includes(a.type))
   try {
+    const markdown = editor.value?.state.doc.toString() ?? ``
+    const renderer = renderStore.getRenderer()
+    const metadata = renderer ? articleMetadata(markdown, renderer) : { title: ``, summary: ``, author: `` }
+
     auto = {
-      thumb: document.querySelector<HTMLImageElement>(`#output img`)?.src ?? ``,
-      title: [1, 2, 3, 4, 5, 6]
-        .map(h => document.querySelector(`#output h${h}`))
-        .find(h => h)
-        ?.textContent ?? ``,
-      desc: document.querySelector(`#output p`)?.textContent?.trim() ?? ``,
+      // The local asset URL is what the dialog can preview; `post()` swaps in the
+      // 公众号 cover URL unless the user typed one of their own.
+      thumb: firstContentImage(output.value),
+      title: metadata.title
+        || [1, 2, 3, 4, 5, 6]
+          .map(h => document.querySelector(`#output h${h}`))
+          .find(h => h)
+          ?.textContent
+          || ``,
+      desc: metadata.summary || document.querySelector(`#output p`)?.textContent?.trim() || ``,
       content: output.value,
-      markdown: editor.value?.state.doc.toString() ?? ``,
+      markdown,
       accounts,
     }
   }
   catch {
   }
   finally {
+    autoThumb.value = auto.thumb
     form.value = {
       ...auto,
     }
@@ -206,8 +223,38 @@ async function getAccounts(): Promise<void> {
   })
 }
 
-function post() {
+async function post() {
+  let article: WechatArticle
+  try {
+    // Blog `{% picture %}` tags become 公众号 assets here, so a failure keeps the
+    // task from starting instead of publishing a local URL readers cannot open. The
+    // same call answers with the cover the article ends up using.
+    article = await resolveWechatArticle(
+      form.value.content,
+      form.value.markdown,
+      renderStore.getRenderer(),
+      studioStore.siteAuthor,
+    )
+    form.value.content = article.content
+    if (form.value.thumb === autoThumb.value)
+      form.value.thumb = article.cover
+  }
+  catch (error) {
+    toast.error(t(`dialog.postTask.pictureFailed`, {
+      message: error instanceof Error ? error.message : String(error),
+    }))
+    return
+  }
+
   form.value.accounts = allAccounts.value.filter(a => a.checked && a.loggedIn)
+
+  // cose fills the body and the title of the draft it opens, but it has no path to 封面/摘要/作者.
+  // Those are queued for the editor page through our own extension, which is where the
+  // settings panel can actually be written.
+  window.dispatchEvent(new CustomEvent(`copyToMp`, {
+    detail: { ...article, metadataOnly: true },
+  }))
+
   postTaskDialogVisible.value = true
   dialogVisible.value = false
 }

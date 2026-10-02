@@ -508,7 +508,7 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
     reset,
     parseFrontMatterAndContent,
     renderMarkdownToHtml(markdown: string) {
-      return markdownParser.parse(expandJekyllSource(markdown)) as string
+      return markdownParser.parse(expandJekyllSource(markdown, opts)) as string
     },
     buildReadingTime,
     createContainer(content: string) {

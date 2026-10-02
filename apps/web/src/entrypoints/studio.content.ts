@@ -1,9 +1,12 @@
+import type { WechatArticle } from '@/types/wechat'
+
 import { defineContentScript } from '#imports'
 
 interface StudioPageMessage {
   source?: string
   type?: string
-  content?: string
+  article?: WechatArticle
+  metadataOnly?: boolean
 }
 
 export default defineContentScript({
@@ -34,7 +37,7 @@ export default defineContentScript({
         return
 
       try {
-        const res = await browser.runtime.sendMessage({ type: `studioCopyToMp`, content: data.content })
+        const res = await browser.runtime.sendMessage({ type: `studioCopyToMp`, article: data.article, metadataOnly: data.metadataOnly })
         reply({ type: `copyToMpResult`, ok: Boolean(res?.ok), reason: res?.reason })
       }
       catch {

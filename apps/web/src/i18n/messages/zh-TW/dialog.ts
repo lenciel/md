@@ -206,6 +206,7 @@ export default {
     publishing: `釋出中`,
     syncFailed: `同步失敗，錯誤內容：{error}`,
     syncSuccess: `同步成功`,
+    pictureFailed: `圖片處理失敗，未發布：{message}`,
     viewDraft: `檢視草稿`,
   },
   preferences: {

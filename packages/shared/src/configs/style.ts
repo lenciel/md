@@ -1,6 +1,7 @@
 import type { IConfigOption } from '../types'
 import type { ThemeName } from './theme-css'
 import { themeOptions } from './theme'
+import { themeStyleDefaults } from './theme-defaults'
 
 export const fontFamilyOptions: IConfigOption[] = [
   {
@@ -399,7 +400,12 @@ export interface PerThemeSettings {
   isMacCodeBlock: boolean
 }
 
-export function defaultPerThemeSettings(): PerThemeSettings {
+/**
+ * Defaults for one theme's settings; a ported theme overrides the shared values
+ * where its original stylesheet dictates a different base size (see
+ * `theme-defaults.ts`).
+ */
+export function defaultPerThemeSettings(theme: ThemeName = defaultStyleConfig.theme): PerThemeSettings {
   return {
     primaryColor: defaultStyleConfig.primaryColor,
     fontFamily: defaultStyleConfig.fontFamily,
@@ -412,6 +418,7 @@ export function defaultPerThemeSettings(): PerThemeSettings {
     headingStyles: { ...defaultStyleConfig.headingStyles },
     isShowLineNumber: defaultStyleConfig.isShowLineNumber,
     isMacCodeBlock: defaultStyleConfig.isMacCodeBlock,
+    ...(themeStyleDefaults[theme] ?? {}),
   }
 }
 

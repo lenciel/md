@@ -136,6 +136,11 @@ export default {
       apiKeyRequired: `API Key 不能为空`,
       uploadPresetRequired: `未填写 apiSecret 时必须提供上传预设名`,
     },
+    picture: {
+      notFound: `文件不存在`,
+      convertFailed: `图片格式转换失败`,
+      failed: `以下图片无法上传到公众号，已中止：{items}`,
+    },
     provider: {
       accessTokenFailed: `获取 access_token 失败`,
       uploadNoUrl: `上传失败，未获取到URL`,

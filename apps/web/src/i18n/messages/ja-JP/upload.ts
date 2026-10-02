@@ -136,6 +136,11 @@ export default {
       apiKeyRequired: `API Key は必須です`,
       uploadPresetRequired: `apiSecret 未設定時はアップロードプリセットが必須です`,
     },
+    picture: {
+      notFound: `ファイルが見つかりません`,
+      convertFailed: `画像形式の変換に失敗しました`,
+      failed: `以下の画像を WeChat にアップロードできなかったため、処理を中止しました：{items}`,
+    },
     provider: {
       accessTokenFailed: `access_token の取得に失敗しました`,
       uploadNoUrl: `アップロード失敗: URL が返されませんでした`,

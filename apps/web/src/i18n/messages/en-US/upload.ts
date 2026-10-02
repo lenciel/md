@@ -136,6 +136,11 @@ export default {
       apiKeyRequired: `API Key is required`,
       uploadPresetRequired: `Upload preset is required when apiSecret is not provided`,
     },
+    picture: {
+      notFound: `File not found`,
+      convertFailed: `Failed to convert the image format`,
+      failed: `These pictures could not be uploaded to WeChat; the copy was aborted: {items}`,
+    },
     provider: {
       accessTokenFailed: `Failed to obtain access_token`,
       uploadNoUrl: `Upload failed: no URL returned`,

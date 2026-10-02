@@ -8,11 +8,15 @@ import {
   computeNextFragments,
   isValidSlug,
   listPosts,
+  readAssetFile,
   readPostFile,
+  readSiteAuthor,
+  readWxmpManifest,
   resolvePostPath,
   shanghaiNow,
   StudioError,
   writeFilePreservingMode,
+  writeWxmpManifest,
 } from './workspace.js'
 
 // Vite's dev proxy forwards the original Origin, so both loopback spellings are allowed.
@@ -76,7 +80,12 @@ export function createStudioApp({ config, distDir }) {
 
   // The custom header forces a CORS preflight, so no token/CORS handling is needed.
   app.use('/api', (req, res, next) => {
-    if (req.get('X-MD-Studio') !== '1') {
+    // `<img src>` cannot carry the header, so the one read-only asset route is exempt.
+    // It stays gated by the `downloads/` allowlist, and without CORS headers a foreign
+    // page can display such an image but never read its bytes back.
+    const isAssetRead = req.method === 'GET' && req.path === '/studio/asset'
+
+    if (!isAssetRead && req.get('X-MD-Studio') !== '1') {
       res.status(403).json({ error: 'missing-header' })
       return
     }
@@ -95,9 +104,10 @@ export function createStudioApp({ config, distDir }) {
     next()
   })
 
-  app.get('/api/studio/state', (req, res) => {
+  app.get('/api/studio/state', async (req, res) => {
     res.json({
       root: config.root,
+      author: await readSiteAuthor(config.root),
       postsDir,
       distOk: indexHtml != null,
       running: listRunning(),
@@ -112,6 +122,29 @@ export function createStudioApp({ config, distDir }) {
 
   app.get('/api/studio/file', async (req, res) => {
     res.json(await readPostFile(config.root, req.query.path))
+  })
+
+  // Byte facts only: the picture resolver checks the manifest before pulling bytes.
+  app.get('/api/studio/asset-info', async (req, res) => {
+    const { rel, size, sha256, mime } = await readAssetFile(config.root, req.query.path)
+    res.json({ path: rel, size, sha256, mime })
+  })
+
+  app.get('/api/studio/asset', async (req, res) => {
+    const { rel, mime, buffer } = await readAssetFile(config.root, req.query.path)
+    res.set('Content-Type', mime)
+    res.set('X-MD-Asset-Path', rel)
+    res.send(buffer)
+  })
+
+  // The blog manifest `rake wxmp:upload` also reads and writes, so a picture already
+  // uploaded by a deploy is never uploaded again from the editor.
+  app.get('/api/studio/wxmp-manifest', async (req, res) => {
+    res.json({ manifest: await readWxmpManifest(config.root) })
+  })
+
+  app.put('/api/studio/wxmp-manifest', async (req, res) => {
+    res.json({ manifest: await writeWxmpManifest(config.root, req.body?.updates) })
   })
 
   app.put('/api/studio/file', async (req, res) => {

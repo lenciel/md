@@ -16,6 +16,7 @@ import { toStoredDateTime } from '@/lib/format/datetime'
 import { jumpToAdjacentHeading } from '@/lib/markdown/headingNavigation'
 import { contentHasMath, loadMathJax, MATHJAX_READY_EVENT } from '@/lib/preview/mathjax'
 import { validateImageFile } from '@/lib/upload/validate-image'
+import { studioApi } from '@/services/studio/client'
 import { isUploadProviderConfigured } from '@/services/upload/provider-registry'
 import { store } from '@/storage'
 import { useEditorStore } from '@/stores/editor'
@@ -554,6 +555,8 @@ onMounted(() => {
       await renderStore.initRendererInstance({
         isMacCodeBlock: themeStore.isMacCodeBlock,
         isShowLineNumber: themeStore.isShowLineNumber,
+        // Blog picture tags only become images when the workspace can serve the files.
+        pictureSrcBase: studioApi.assetSrcBase || undefined,
       })
       themeStore.applyCurrentTheme()
       await nextTick()

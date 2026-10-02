@@ -1,3 +1,4 @@
+import type { WechatArticle } from '@/types/wechat'
 import { t } from '@/i18n/translate'
 
 interface StudioExtensionMessage {
@@ -22,10 +23,10 @@ export function installStudioCopyToMpBridge(): void {
     return
 
   let extensionReady = false
-  let pendingContent: string | null = null
+  let pendingPush: { article: WechatArticle, metadataOnly: boolean } | null = null
   let pendingTimer: number | null = null
 
-  const postToExtension = (message: { type: string, content?: string }) => {
+  const postToExtension = (message: { type: string, article?: WechatArticle, metadataOnly?: boolean }) => {
     window.postMessage({ source: `md-studio`, ...message }, window.location.origin)
   }
 
@@ -37,11 +38,11 @@ export function installStudioCopyToMpBridge(): void {
   }
 
   const flushPending = () => {
-    if (pendingContent == null)
+    if (pendingPush == null)
       return
-    const content = pendingContent
-    pendingContent = null
-    postToExtension({ type: `copyToMp`, content })
+    const push = pendingPush
+    pendingPush = null
+    postToExtension({ type: `copyToMp`, ...push })
   }
 
   window.addEventListener(`message`, (event) => {
@@ -70,20 +71,22 @@ export function installStudioCopyToMpBridge(): void {
   })
 
   window.addEventListener(`copyToMp`, (event) => {
-    const content = (event as CustomEvent<{ content?: string }>).detail?.content
-    if (typeof content !== `string` || !content)
+    const detail = (event as CustomEvent<WechatArticle & { metadataOnly?: boolean }>).detail
+    const { metadataOnly, ...article } = detail ?? {}
+    if (typeof article?.content !== `string` || !article.content)
       return
 
+    const push = { article, metadataOnly: metadataOnly === true }
     if (extensionReady) {
-      postToExtension({ type: `copyToMp`, content })
+      postToExtension({ type: `copyToMp`, ...push })
       return
     }
 
     // The content script injects at document_start, so its `ready` can land after this listener:
     // hold one copy until it shows up.
-    pendingContent = content
+    pendingPush = push
     pendingTimer ??= window.setTimeout(() => {
-      pendingContent = null
+      pendingPush = null
       pendingTimer = null
     }, PENDING_TIMEOUT_MS)
   })

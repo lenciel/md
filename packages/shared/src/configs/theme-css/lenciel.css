@@ -7,7 +7,12 @@
  * mapped onto the app variables (--md-link-color / --md-primary-color) so the
  * colour pickers keep working — pick 微信蓝 links and 天空蓝 for the exact blues.
  *
- * Scale: blog body 16-18px, headings 1.75 / 1.6 / 1.45 / 1.2 / 1.14 / 1 x body.
+ * Scale: every size below is a multiple of --md-font-size, taken from the blog's
+ * desktop headings (37.63 / 34.50 / 31.36 / 22.40 / 20.16 / 17.92px) over its
+ * 18px desktop body — the blog's `html` font-size is fluid 16→18px, so a phone
+ * reader sees a smaller base than a desktop one. theme-defaults.ts ships that
+ * 18px base for this theme so the multiples land on the blog's pixels; another
+ * 字号 scales the whole article proportionally.
  */
 
 /* ==================== Headings ==================== */
@@ -17,7 +22,7 @@ h1 {
   margin: calc(2em * var(--md-block-spacing)) 8px calc(0.6em * var(--md-block-spacing));
   border-bottom: none;
   color: hsl(var(--foreground));
-  font-size: calc(var(--md-font-size) * 1.75);
+  font-size: calc(var(--md-font-size) * 2.09);
   font-weight: bold;
   line-height: 1.2;
   text-align: left;
@@ -33,7 +38,7 @@ h2 {
   border-radius: 0;
   background: none;
   color: hsl(var(--foreground));
-  font-size: calc(var(--md-font-size) * 1.6);
+  font-size: calc(var(--md-font-size) * 1.92);
   font-weight: bold;
   line-height: 1.35;
   text-align: left;
@@ -45,7 +50,7 @@ h3 {
   border-left: none;
   margin: calc(2em * var(--md-block-spacing)) 8px calc(0.6em * var(--md-block-spacing));
   color: hsl(var(--foreground));
-  font-size: calc(var(--md-font-size) * 1.45);
+  font-size: calc(var(--md-font-size) * 1.74);
   font-weight: bold;
   line-height: 1.35;
   text-shadow: 1px 1px #efefef, 2px 2px #828887;
@@ -62,13 +67,15 @@ h6 {
 }
 
 h4 {
-  font-size: calc(var(--md-font-size) * 1.2);
+  font-size: calc(var(--md-font-size) * 1.24);
 }
 
 h5 {
-  font-size: calc(var(--md-font-size) * 1.14);
+  font-size: calc(var(--md-font-size) * 1.12);
 }
 
+/* Blog h6 lands a hair under body size (17.92px against an 18px body); the
+   fractional pixel is not worth another multiple, so h6 sits at body size. */
 h6 {
   font-size: var(--md-font-size);
 }
@@ -136,6 +143,23 @@ pre.code__pre > code,
 img {
   border-radius: 0.3em;
   box-shadow: rgba(0, 0, 0, 0.15) 0 1px 4px;
+}
+
+/* The blog lays images out as plain blocks; the UA default of `1em 40px` would
+   inset every figure by 8% of the article width, so the block rhythm is pinned to
+   the same margin the other themes use. */
+figure {
+  margin: calc(1.5em * var(--md-block-spacing)) 8px;
+}
+
+/* The blog captions a picture with a 12px italic line under it. Picture tags carry
+   the same values inline so the caption survives WeChat's style handling, and this
+   rule keeps `legend` captions on regular images looking the same. */
+figcaption,
+.md-figcaption {
+  text-align: center;
+  font-size: 12px;
+  font-style: italic;
 }
 
 /* ==================== Tables ==================== */

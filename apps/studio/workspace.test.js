@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -5,14 +6,20 @@ import { afterAll, describe, expect, it } from 'vitest'
 import {
   buildPostContent,
   computeNextFragments,
+  findAssetFile,
   isPostPath,
   isValidSlug,
   listPosts,
   parseFrontMatterTitle,
+  readAssetFile,
+  readSiteAuthor,
+  readWxmpManifest,
+  resolveAssetPath,
   resolvePostPath,
   StudioError,
   titleFromName,
   writeFilePreservingMode,
+  writeWxmpManifest,
 } from './workspace.js'
 
 const tempDirs = []
@@ -238,5 +245,98 @@ describe(`listPosts`, () => {
     })
     expect(posts[0].mtimeMs).toBeGreaterThan(0)
     expect(posts[0].size).toBeGreaterThan(0)
+  })
+})
+
+describe(`blog assets`, () => {
+  const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x01, 0x02])
+
+  async function makeAssetRoot() {
+    const root = await makeTempDir()
+    await fs.mkdir(path.join(root, `downloads`, `images`, `2026_10`), { recursive: true })
+    await fs.writeFile(path.join(root, `downloads`, `images`, `2026_10`, `shot.jpg`), PNG_BYTES)
+    return root
+  }
+
+  it(`rejects anything outside downloads`, async () => {
+    const root = await makeAssetRoot()
+
+    for (const bad of [`downloads/../_config.yml`, `_posts/a.md`, `/downloads/a.png`, `downloads`, undefined])
+      expect(() => resolveAssetPath(root, bad)).toThrowError(/bad-path/)
+  })
+
+  it(`finds a tag path that omits the extension`, async () => {
+    const root = await makeAssetRoot()
+
+    const file = await findAssetFile(root, `downloads/images/2026_10/shot`)
+    expect(file.rel).toBe(`downloads/images/2026_10/shot.jpg`)
+    expect(file.size).toBe(PNG_BYTES.length)
+
+    await expect(findAssetFile(root, `downloads/images/2026_10/missing`)).rejects.toThrowError(/not-found/)
+  })
+
+  it(`hashes the bytes and trusts them over the extension`, async () => {
+    const root = await makeAssetRoot()
+
+    const asset = await readAssetFile(root, `downloads/images/2026_10/shot`)
+
+    expect(asset.sha256).toMatch(/^[0-9a-f]{64}$/)
+    expect(asset.size).toBe(PNG_BYTES.length)
+    // A .jpg holding PNG bytes is exactly what WeChat rejects when the extension is believed.
+    expect(asset.mime).toBe(`image/png`)
+  })
+})
+
+describe(`wxmp manifest`, () => {
+  const RECORD = { mode: `material`, url: `http://mmbiz.qpic.cn/x`, size: 12, sha256: `a`.repeat(64), media_id: `mid-1` }
+
+  it(`reads an empty manifest when the blog has none`, async () => {
+    expect(await readWxmpManifest(await makeTempDir())).toEqual({})
+  })
+
+  it(`merges into the shared blog manifest, sorted and rake-formatted`, async () => {
+    const root = await makeTempDir()
+    const existing = {
+      'downloads/z.png': { mode: `uploadimg`, url: `http://a`, size: 1, sha256: `b`.repeat(64) },
+      'downloads/a.png': { mode: `material`, url: `http://b`, size: 2, sha256: `c`.repeat(64), media_id: `m` },
+    }
+    await fs.writeFile(path.join(root, `.wxmp-upload.json`), `${JSON.stringify(existing, null, 2)}\n`, `utf8`)
+
+    const written = await writeWxmpManifest(root, { 'downloads/images/new.png': RECORD })
+
+    expect(Object.keys(written)).toEqual([`downloads/a.png`, `downloads/images/new.png`, `downloads/z.png`])
+    expect(written['downloads/a.png']).toEqual(existing['downloads/a.png'])
+    // Byte-identical to `rake wxmp:upload`'s output, so the two tools never fight over the file.
+    expect(await fs.readFile(path.join(root, `.wxmp-upload.json`), `utf8`)).toBe(
+      `${JSON.stringify(written, null, 2)}\n`,
+    )
+  })
+
+  it(`refuses entries that would poison the rake task's cache`, async () => {
+    const root = await makeTempDir()
+
+    await expect(writeWxmpManifest(root, { 'downloads/ok.png': { ...RECORD, mode: `uploadimg` } }))
+      .rejects
+      .toThrowError(/bad-entry/)
+    await expect(writeWxmpManifest(root, { '../outside.png': RECORD })).rejects.toThrowError(/bad-path/)
+    await expect(writeWxmpManifest(root, { 'downloads/ok.png': { mode: `material`, url: `` } }))
+      .rejects
+      .toThrowError(/bad-entry/)
+  })
+})
+
+describe(`site author`, () => {
+  it(`reads the blog author once from _config.yml`, async () => {
+    const root = await makeTempDir()
+    await fs.writeFile(path.join(root, `_config.yml`), `title: "@Lenciel"\nauthor: "Lenciel"\n`, `utf8`)
+    expect(await readSiteAuthor(root)).toBe(`Lenciel`)
+  })
+
+  it(`answers empty when the workspace has no author to give`, async () => {
+    const root = await makeTempDir()
+    expect(await readSiteAuthor(root)).toBe(``)
+
+    await fs.writeFile(path.join(root, `_config.yml`), `title: "@Lenciel"\n`, `utf8`)
+    expect(await readSiteAuthor(root)).toBe(``)
   })
 })

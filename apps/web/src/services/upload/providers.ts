@@ -453,13 +453,54 @@ async function getMpToken(appID: string, appsecret: string, proxyOrigin?: string
 }
 const isCfWorkers = import.meta.env.CF_WORKERS === `1`
 
-async function mpFileUpload(file: File) {
+/** The 图床 settings' 公众号 credentials, with the Workers self-proxy default applied. */
+async function mpUploadConfig() {
   const configStr = await store.get(`mpConfig`)
-  let { appID, appsecret, proxyOrigin } = safeJsonParse<{ appID: string, appsecret: string, proxyOrigin?: string }>(configStr, `mp config`)
-  // When no proxy is configured on CF Workers, use the current origin
-  if (!proxyOrigin && isCfWorkers) {
-    proxyOrigin = window.location.origin
+  const { appID, appsecret, proxyOrigin } = safeJsonParse<{ appID: string, appsecret: string, proxyOrigin?: string }>(configStr, `mp config`)
+  return {
+    appID,
+    appsecret,
+    // When no proxy is configured on CF Workers, use the current origin
+    proxyOrigin: proxyOrigin || (isCfWorkers ? window.location.origin : undefined),
   }
+}
+
+function mpEndpoint(path: string, accessToken: string, proxyOrigin?: string): string {
+  const url = `https://api.weixin.qq.com${path}access_token=${accessToken}`
+  return proxyOrigin ? url.replace(`https://api.weixin.qq.com`, proxyOrigin) : url
+}
+
+/**
+ * Upload one image as a 永久素材 and answer with the asset URL and its media id.
+ *
+ * Unlike the 图床 provider this never falls back to `media/uploadimg`: article images
+ * have to be material (the blog's `rake wxmp:upload` deploys them the same way), and the
+ * raw `mmbiz` URL is what belongs in the article — no wsrv.nl rewriting.
+ */
+export async function uploadMpMaterial(file: File): Promise<{ url: string, mediaId: string }> {
+  const { appID, appsecret, proxyOrigin } = await mpUploadConfig()
+  const accessToken = await getMpToken(appID, appsecret, proxyOrigin)
+  if (!accessToken)
+    throw new Error(t(`upload.provider.accessTokenFailed`))
+
+  const formdata = new FormData()
+  formdata.append(`media`, file, file.name)
+
+  const res = await fetch<any, { url?: string, media_id?: string, errcode?: number, errmsg?: string }>(
+    mpEndpoint(`/cgi-bin/material/add_material?type=image&`, accessToken, proxyOrigin),
+    { method: `POST`, data: formdata },
+  )
+
+  if (!res.url || !res.media_id) {
+    const detail = res.errcode ? `: [${res.errcode}] ${res.errmsg}` : ``
+    throw new Error(t(`upload.provider.uploadNoUrl`) + detail)
+  }
+
+  return { url: res.url, mediaId: res.media_id }
+}
+
+async function mpFileUpload(file: File) {
+  const { appID, appsecret, proxyOrigin } = await mpUploadConfig()
   const access_token = await getMpToken(appID, appsecret, proxyOrigin)
   if (!access_token) {
     throw new Error(t(`upload.provider.accessTokenFailed`))
@@ -473,15 +514,11 @@ async function mpFileUpload(file: File) {
     data: formdata,
   }
 
-  let url = `https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=${access_token}&type=image`
-  const fileSizeInMB = file.size / (1024 * 1024)
-  const fileType = file.type.toLowerCase()
-  if (fileSizeInMB < 1 && (fileType === `image/jpeg` || fileType === `image/png`)) {
-    url = `https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=${access_token}`
-  }
-  if (proxyOrigin) {
-    url = url.replace(`https://api.weixin.qq.com`, proxyOrigin)
-  }
+  // The 图床 path prefers the no-quota endpoint for small rasters; WeChat goes by the
+  // bytes, so anything else (webp, >1MB) has to become a 永久素材.
+  const smallRaster = file.size < 1024 * 1024 && (file.type === `image/jpeg` || file.type === `image/png`)
+  const endpointPath = smallRaster ? `/cgi-bin/media/uploadimg?` : `/cgi-bin/material/add_material?type=image&`
+  const url = mpEndpoint(endpointPath, access_token, proxyOrigin)
 
   const res = await fetch<any, { url?: string, errcode?: number, errmsg?: string }>(url, requestOptions)
 

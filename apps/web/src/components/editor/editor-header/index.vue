@@ -4,9 +4,11 @@ import { defineAsyncComponent } from 'vue'
 import { useEditorRefresh } from '@/composables/useEditorRefresh'
 import { delay } from '@/lib/delay'
 import { generatePureHTML, processClipboardContent } from '@/services/export'
+import { resolveWechatArticle } from '@/services/export/wechat-article'
 import { useEditorStore } from '@/stores/editor'
 import { useExportStore } from '@/stores/export'
 import { useRenderStore } from '@/stores/render'
+import { useStudioStore } from '@/stores/studio'
 import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
 import EditDropdown from './EditDropdown.vue'
@@ -32,12 +34,12 @@ const PdfExportDialog = defineAsyncComponent(() => import('@/components/editor/d
 const editorStore = useEditorStore()
 const themeStore = useThemeStore()
 const renderStore = useRenderStore()
+const studioStore = useStudioStore()
 const uiStore = useUIStore()
 const exportStore = useExportStore()
 const { editorRefresh } = useEditorRefresh()
 
 const { editor } = storeToRefs(editorStore)
-const { output } = storeToRefs(renderStore)
 const { primaryColor } = storeToRefs(themeStore)
 const { isOpenRightSlider, isShowSyncDialog, isShowAccountDialog, isShowShareDialog, isShowPdfExportDialog, isShowAboutDialog, isShowFundDialog, isShowEditorStateDialog, isShowPreferencesDialog, isShowMarkdownHelpDialog, isShowKeyboardShortcutsDialog, copyMode } = storeToRefs(uiStore)
 
@@ -191,11 +193,16 @@ async function copy() {
             ? t(`toast.copiedHtml`)
             : t(`toast.copiedRendered`),
         )
+        // The studio relay feeds this straight into the 公众号 editor: same styled, picture
+        // resolved HTML as the clipboard, plus the 标题/摘要/封面/作者 the document already states.
         window.dispatchEvent(
           new CustomEvent(`copyToMp`, {
-            detail: {
-              content: output.value,
-            },
+            detail: await resolveWechatArticle(
+              temp,
+              editor.value?.state.doc.toString() ?? ``,
+              renderStore.getRenderer(),
+              studioStore.siteAuthor,
+            ),
           }),
         )
         editorRefresh()
