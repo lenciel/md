@@ -93,6 +93,14 @@ export interface StudioAssetInfo {
   mime: string
 }
 
+export interface StudioShare {
+  id: string
+  /** Loopback URL, for this machine. */
+  url: string
+  /** Same page on the studio's LAN address, for the phone; empty when none was found. */
+  lanUrl: string
+}
+
 /** One `.wxmp-upload.json` record; the shape `rake wxmp:upload` writes and reads. */
 export interface StudioWxmpRecord {
   mode: `uploadimg` | `material`
@@ -242,6 +250,19 @@ export const studioApi = {
       throw await toHttpError(response)
     return await response.blob()
   },
+
+  /**
+   * Publish a 分享 snapshot locally instead of to the cloud: the studio serves it back,
+   * including over the LAN, so a phone can open the 公众号 rendering without an account.
+   */
+  createShare: (input: { title: string, bodyHtml: string, stylesHtml: string }) => request<StudioShare>(
+    `/studio/share`,
+    {
+      method: `POST`,
+      headers: buildHeaders(true),
+      body: JSON.stringify(input),
+    },
+  ),
 
   /** The blog manifest shared with `rake wxmp:upload`: what is already on WeChat. */
   wxmpManifest: () => request<{ manifest: Record<string, StudioWxmpRecord> }>(

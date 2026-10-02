@@ -12,12 +12,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { resolvePictureHtml } from '@/services/export/wechat-picture'
 import { captureShareSnapshot } from '@/services/share/capture-snapshot'
 import { isShareConfigured, isShareProUser, ShareApiError, ShareClient } from '@/services/share/client'
+import { studioApi } from '@/services/studio/client'
 import { useAuthStore } from '@/stores/auth'
 import { useConfirmStore } from '@/stores/confirm'
 import { useLocaleStore } from '@/stores/locale'
 import { usePostStore } from '@/stores/post'
+import { useStudioStore } from '@/stores/studio'
 import { useUIStore } from '@/stores/ui'
 
 const props = defineProps<{
@@ -46,6 +49,7 @@ const postStore = usePostStore()
 const uiStore = useUIStore()
 const confirmStore = useConfirmStore()
 const localeStore = useLocaleStore()
+const studioStore = useStudioStore()
 
 const passwordOptions = computed<PasswordOption[]>(() => [
   {
@@ -108,6 +112,54 @@ const expiresAt = ref<number | null>(null)
 const errorMessage = ref(``)
 const copiedLink = ref(false)
 const copiedPassword = ref(false)
+
+/** Studio mode: the same snapshot can be served locally, no account involved. */
+const localPreview = ref<{ url: string, lanUrl: string } | null>(null)
+const isLocalSubmitting = ref(false)
+const copiedLocalLink = ref(false)
+
+const localShareUrl = computed(() => localPreview.value?.lanUrl || localPreview.value?.url || ``)
+const localQrSrc = computed(() => localShareUrl.value
+  ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(localShareUrl.value)}`
+  : ``)
+
+async function createLocalPreview() {
+  if (isLocalSubmitting.value)
+    return
+
+  isLocalSubmitting.value = true
+  copiedLocalLink.value = false
+  try {
+    const snapshot = await captureShareSnapshot()
+    const currentPost = postStore.currentPost
+    localPreview.value = await studioApi.createShare({
+      title: currentPost?.title ?? ``,
+      // The page opens on another device, where the studio's own asset URLs mean nothing:
+      // pictures come from WeChat, reusing whatever was already uploaded.
+      bodyHtml: await resolvePictureHtml(snapshot.bodyHtml),
+      stylesHtml: snapshot.stylesHtml,
+    })
+  }
+  catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    toast.error(t(`share.local.failed`, { message }))
+  }
+  finally {
+    isLocalSubmitting.value = false
+  }
+}
+
+async function copyLocalLink() {
+  if (!localShareUrl.value)
+    return
+
+  await navigator.clipboard.writeText(localShareUrl.value)
+  copiedLocalLink.value = true
+  window.setTimeout(() => {
+    copiedLocalLink.value = false
+  }, 2000)
+  toast.success(t(`share.local.copied`))
+}
 
 const expiresLabel = computed(() => {
   if (expiresAt.value == null && shareUrl.value)
@@ -344,6 +396,48 @@ watch(isProUser, (pro) => {
     :description="t('share.description')"
     :icon="Share2"
   >
+    <!-- Studio mode serves the same snapshot locally, so this needs no account. -->
+    <div v-if="studioStore.isActive" class="space-y-3 px-4 py-4 sm:px-6">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="min-w-0">
+          <h3 class="text-sm font-medium">
+            {{ t('share.local.title') }}
+          </h3>
+          <p class="text-xs text-muted-foreground">
+            {{ t('share.local.description') }}
+          </p>
+        </div>
+        <Button :disabled="isLocalSubmitting" @click="createLocalPreview">
+          <Loader2 v-if="isLocalSubmitting" class="mr-2 h-4 w-4 animate-spin" />
+          <Globe v-else class="mr-2 h-4 w-4" />
+          {{ isLocalSubmitting ? t('share.local.generating') : t('share.local.action') }}
+        </Button>
+      </div>
+
+      <div v-if="localPreview" class="flex flex-wrap items-start gap-4 rounded-md border p-4">
+        <img v-if="localQrSrc" :src="localQrSrc" :alt="t('share.local.qrAlt')" class="h-[180px] w-[180px] rounded bg-white">
+        <div class="min-w-0 flex-1 space-y-2">
+          <p class="text-xs text-muted-foreground">
+            {{ localPreview.lanUrl ? t('share.local.lanHint') : t('share.local.noLanHint') }}
+          </p>
+          <div class="flex flex-wrap items-center gap-2">
+            <Input :model-value="localShareUrl" readonly class="min-w-0 flex-1" @focus="$event.target.select()" />
+            <Button variant="outline" size="sm" @click="copyLocalLink">
+              <Check v-if="copiedLocalLink" class="mr-2 h-4 w-4" />
+              <Copy v-else class="mr-2 h-4 w-4" />
+              {{ t('common.copy') }}
+            </Button>
+            <a :href="localPreview.url" target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                <ExternalLink class="mr-2 h-4 w-4" />
+                {{ t('share.local.openHere') }}
+              </Button>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <CloudFeatureState
       v-if="!isShareConfigured()"
       :icon="Share2"

@@ -50,7 +50,8 @@ const { isLoggedIn } = storeToRefs(authStore)
 const { locale } = storeToRefs(localeStore)
 const showAccountUi = isAccountUiEnabled()
 const showSyncUi = isSyncUiEnabled()
-const showShareUi = isShareUiEnabled()
+// Studio mode can serve a share page itself, so the entry is useful without the cloud API.
+const showShareUi = isShareUiEnabled() || Boolean(window.__MD_STUDIO__)
 const { syncFooterIcon, syncFooterIconClass, syncTooltip } = useSyncFooterMeta()
 
 const isMoreOpen = ref(false)

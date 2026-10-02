@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import express from 'express'
 import { attachJob, isRunning, listRunning, resolveCommandFile, resolveShell, runCommand, stopCommand, usesFile } from './exec.js'
+import { createShare, createShareRouter } from './share.js'
 import {
   buildPostContent,
   computeNextFragments,
@@ -45,6 +46,33 @@ function readIndexHtml(distDir) {
   }
 }
 
+/**
+ * The SPA shell, re-read whenever the build changes. `pnpm studio:build` while the server is
+ * running swaps the hashed bundle names, and a cached shell would then point at files that
+ * no longer exist — the page would load with a blank body and 404s in the console.
+ */
+function createIndexHtmlReader(distDir) {
+  let cached = null
+  let cachedMtimeMs = -1
+
+  return () => {
+    let mtimeMs = -1
+    try {
+      mtimeMs = statSync(path.join(distDir ?? '', 'index.html')).mtimeMs
+    }
+    catch {
+      return null
+    }
+
+    if (cached && mtimeMs === cachedMtimeMs)
+      return cached
+
+    cached = readIndexHtml(distDir)
+    cachedMtimeMs = mtimeMs
+    return cached
+  }
+}
+
 function publicCommand(command) {
   const { id, label, mode, url } = command
   // `needsFile` lets the panel disable the button until a post is open.
@@ -70,11 +98,11 @@ async function findStale(absPath, baseMtimeMs) {
   return { content: await fs.readFile(absPath, 'utf8'), mtimeMs: stat.mtimeMs }
 }
 
-export function createStudioApp({ config, distDir }) {
+export function createStudioApp({ config, distDir, shareOrigins = {} }) {
   const postsDir = config.postsDir ?? '_posts'
   const commands = config.commands ?? []
   const shell = resolveShell(config)
-  const indexHtml = readIndexHtml(distDir)
+  const readShell = createIndexHtmlReader(distDir)
   const app = express()
 
   app.use(express.json({ limit: '10mb' }))
@@ -110,7 +138,7 @@ export function createStudioApp({ config, distDir }) {
       root: config.root,
       author: await readSiteAuthor(config.root),
       postsDir,
-      distOk: indexHtml != null,
+      distOk: readShell() != null,
       running: listRunning(),
       commands: commands.map(publicCommand),
     })
@@ -125,18 +153,51 @@ export function createStudioApp({ config, distDir }) {
     res.json(await readPostFile(config.root, req.query.path))
   })
 
+  /** A picture the editor cannot resolve is worth a line here: the browser only says "failed". */
+  async function serveAsset(path, send) {
+    try {
+      await send(path)
+    }
+    catch (err) {
+      if (err instanceof StudioError && err.status === 404)
+        console.warn(`[studio] 找不到文章引用的资源: ${path}`)
+      throw err
+    }
+  }
+
   // Byte facts only: the picture resolver checks the manifest before pulling bytes.
   app.get('/api/studio/asset-info', async (req, res) => {
-    const { rel, size, sha256, mime } = await readAssetFile(config.root, req.query.path)
-    res.json({ path: rel, size, sha256, mime })
+    await serveAsset(req.query.path, async (path) => {
+      const { rel, size, sha256, mime } = await readAssetFile(config.root, path)
+      res.json({ path: rel, size, sha256, mime })
+    })
   })
 
   app.get('/api/studio/asset', async (req, res) => {
-    const { rel, mime, buffer } = await readAssetFile(config.root, req.query.path)
-    res.set('Content-Type', mime)
-    res.set('X-MD-Asset-Path', rel)
-    res.send(buffer)
+    await serveAsset(req.query.path, async (path) => {
+      const { rel, mime, buffer } = await readAssetFile(config.root, path)
+      res.set('Content-Type', mime)
+      res.set('X-MD-Asset-Path', rel)
+      res.send(buffer)
+    })
   })
+
+  // Local share: the 分享 dialog's snapshot, served to the phone instead of uploaded.
+  // Same page as the cloud share, so the 公众号 rendering is what the phone shows.
+  app.post('/api/studio/share', (req, res) => {
+    const { title = '', bodyHtml, stylesHtml } = req.body ?? {}
+    if (typeof bodyHtml !== 'string' || !bodyHtml)
+      throw new StudioError(400, 'bad-snapshot')
+
+    const { id } = createShare({ title: String(title), bodyHtml, stylesHtml: typeof stylesHtml === 'string' ? stylesHtml : '' })
+    res.json({
+      id,
+      url: `${shareOrigins.local ?? ''}/s/${id}`,
+      lanUrl: shareOrigins.lan ? `${shareOrigins.lan}/s/${id}` : '',
+    })
+  })
+
+  app.use(createShareRouter())
 
   // The blog manifest `rake wxmp:upload` also reads and writes, so a picture already
   // uploaded by a deploy is never uploaded again from the editor.
@@ -267,6 +328,7 @@ export function createStudioApp({ config, distDir }) {
       return
     }
 
+    const indexHtml = readShell()
     if (!indexHtml || !HTML_ACCEPT_RE.test(req.get('Accept') ?? '')) {
       next()
       return

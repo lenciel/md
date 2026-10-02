@@ -240,7 +240,7 @@ async function post() {
       form.value.thumb = article.cover
   }
   catch (error) {
-    toast.error(t(`dialog.postTask.pictureFailed`, {
+    toast.error(t(`postTask.pictureFailed`, {
       message: error instanceof Error ? error.message : String(error),
     }))
     return

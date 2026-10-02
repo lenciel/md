@@ -238,7 +238,7 @@ export function useCommandPalette() {
       })
     }
 
-    if (isShareUiEnabled()) {
+    if (isShareUiEnabled() || window.__MD_STUDIO__) {
       commands.push({
         id: `open-share`,
         label: t(`menu.sharePreview`),

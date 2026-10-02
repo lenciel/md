@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import getPort from 'get-port'
 import { stopAllRunning } from './exec.js'
 import { createStudioApp } from './server.js'
+import { createShareApp } from './share.js'
 
 const DEFAULT_CONFIG_PATH = fileURLToPath(new URL('./studio.config.json', import.meta.url))
 const DIST_DIR = fileURLToPath(new URL('../../apps/web/dist/', import.meta.url))
@@ -62,6 +64,29 @@ function parseArgv(argv) {
   return options
 }
 
+/**
+ * The address the phone should use. `en0`/`en1` are the Wi-Fi/Ethernet interfaces on macOS;
+ * anything else non-internal is a fallback (docker bridges are internal, so they stay out).
+ */
+function lanAddress() {
+  const interfaces = os.networkInterfaces()
+  const preferred = ['en0', 'en1']
+
+  for (const name of preferred) {
+    const address = (interfaces[name] ?? []).find(item => item.family === 'IPv4' && !item.internal)
+    if (address)
+      return address.address
+  }
+
+  for (const items of Object.values(interfaces)) {
+    const address = (items ?? []).find(item => item.family === 'IPv4' && !item.internal)
+    if (address)
+      return address.address
+  }
+
+  return ''
+}
+
 function loadConfig(configPath) {
   try {
     return JSON.parse(fs.readFileSync(configPath, 'utf8'))
@@ -92,7 +117,15 @@ async function main() {
     fail('未找到 apps/web/dist，请先运行 pnpm studio:build')
 
   const port = await getPort({ port: config.port })
-  const app = createStudioApp({ config, distDir: DIST_DIR })
+  const sharePort = await getPort({ port: config.sharePort ?? port + 1 })
+  const lanIp = lanAddress()
+  const shareLanOrigin = lanIp && sharePort !== port ? `http://${lanIp}:${sharePort}` : ''
+
+  const app = createStudioApp({
+    config,
+    distDir: DIST_DIR,
+    shareOrigins: { local: `http://127.0.0.1:${port}`, lan: shareLanOrigin },
+  })
   const server = app.listen(port, '127.0.0.1', () => {
     const url = `http://127.0.0.1:${port}/`
     if (port !== config.port)
@@ -100,14 +133,25 @@ async function main() {
     console.log(`已连接博客工作目录: ${config.root}`)
     console.log(`打开 ${url}`)
 
+    if (shareLanOrigin)
+      console.log(`手机预览（同一 Wi-Fi）: ${shareLanOrigin}/s/…  ← 在「分享」里生成`)
+
     if (argv.open && process.platform === 'darwin')
       spawn('open', [url], { stdio: 'ignore', detached: true }).unref()
   })
 
   server.on('error', err => fail(`服务启动失败: ${err.message}`))
 
+  // A second listener on the LAN that serves share pages and nothing else.
+  let shareServer = null
+  if (shareLanOrigin) {
+    shareServer = createShareApp().listen(sharePort, '0.0.0.0')
+    shareServer.on('error', err => console.warn(`手机预览服务未启动: ${err.message}`))
+  }
+
   const shutdown = () => {
     stopAllRunning()
+    shareServer?.close()
     server.close(() => process.exit(0))
     // jekyll may ignore SIGINT; never hang the shell on shutdown.
     setTimeout(() => process.exit(0), 1000).unref()
