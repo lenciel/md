@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
-import { buildCommandLine, resolveCommandFile, usesFile } from './exec.js'
+import { buildCommandLine, resolveCommandFile, resolveShell, usesFile } from './exec.js'
 import { StudioError } from './workspace.js'
 
 describe(`usesFile`, () => {
@@ -78,6 +78,28 @@ describe(`buildCommandLine`, () => {
       const result = spawnSync(`zsh`, [`-c`, line], { encoding: `utf8` })
       expect(result.status).toBe(0)
       expect(result.stdout).toBe(name)
+    }
+  })
+})
+
+describe(`resolveShell`, () => {
+  it(`keeps the interactive login shell by default`, () => {
+    expect(resolveShell()).toEqual({ shell: `zsh`, args: [`-lic`] })
+    expect(resolveShell({})).toEqual({ shell: `zsh`, args: [`-lic`] })
+  })
+
+  it(`takes the configured shell and arguments`, () => {
+    expect(resolveShell({ shell: `/opt/homebrew/bin/zsh`, shellArgs: [`-c`] }))
+      .toEqual({ shell: `/opt/homebrew/bin/zsh`, args: [`-c`] })
+  })
+
+  it(`falls back rather than spawning a shell it cannot trust`, () => {
+    for (const broken of [{ shell: ``, shellArgs: [`-c`] }, { shell: 42 }, { shellArgs: [] }, { shellArgs: `-c` }, { shellArgs: [1] }]) {
+      const { shell, args } = resolveShell(broken)
+      expect(typeof shell).toBe(`string`)
+      expect(shell.length).toBeGreaterThan(0)
+      expect(args.length).toBeGreaterThan(0)
+      expect(args.every(arg => typeof arg === `string`)).toBe(true)
     }
   })
 })

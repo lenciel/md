@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import express from 'express'
-import { attachJob, isRunning, listRunning, resolveCommandFile, runCommand, stopCommand, usesFile } from './exec.js'
+import { attachJob, isRunning, listRunning, resolveCommandFile, resolveShell, runCommand, stopCommand, usesFile } from './exec.js'
 import {
   buildPostContent,
   computeNextFragments,
@@ -73,6 +73,7 @@ async function findStale(absPath, baseMtimeMs) {
 export function createStudioApp({ config, distDir }) {
   const postsDir = config.postsDir ?? '_posts'
   const commands = config.commands ?? []
+  const shell = resolveShell(config)
   const indexHtml = readIndexHtml(distDir)
   const app = express()
 
@@ -238,6 +239,8 @@ export function createStudioApp({ config, distDir }) {
         cwd: config.root,
         postsDir,
         file,
+        shell: shell.shell,
+        shellArgs: shell.args,
         onEvent: send,
       }).detach
 

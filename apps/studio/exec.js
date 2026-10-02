@@ -9,7 +9,39 @@ const SIGKILL_DELAY_MS = 5000
 /** Config commands may reference the post currently open in the editor. */
 const FILE_PLACEHOLDER = '{file}'
 
-/** Quote for `zsh -lic`: a post name may hold spaces or quotes. */
+/**
+ * How the config's commands are run. The default is an interactive login shell, which is
+ * what makes `.zshrc` aliases and PATH setup available — at the cost of the prompt plumbing
+ * (theme, gitstatus, completion) complaining that it has no terminal. A plain `-c` keeps the
+ * environment of whoever started the studio, which is what automation usually wants.
+ */
+const DEFAULT_SHELL = 'zsh'
+const DEFAULT_SHELL_ARGS = ['-lic']
+
+/**
+ * Run the command under a pty. Interactive rc files (`gitstatus`, `zle` bindings, `stty`)
+ * need a terminal and print errors on every run without one; a pty is what the user's own
+ * terminal provides, so the same rc stays quiet. `TERM=dumb` + `NO_COLOR` keep the output
+ * line-based for the log view instead of repainting it with escapes.
+ *
+ * BSD `script` (macOS) takes the command as trailing arguments; util-linux wants `-c`.
+ */
+function ptyCommand(shell, shellArgs, cmd) {
+  if (process.platform === 'darwin')
+    return { command: 'script', args: ['-q', '/dev/null', shell, ...shellArgs, cmd] }
+  return { command: 'script', args: ['-q', '-e', '-c', [shell, ...shellArgs, cmd].map(shellQuote).join(' '), '/dev/null'] }
+}
+
+/** Config's `shell` / `shellArgs`, falling back to the defaults when they are unusable. */
+export function resolveShell(config = {}) {
+  const shell = typeof config.shell === 'string' && config.shell.trim() ? config.shell.trim() : DEFAULT_SHELL
+  const args = Array.isArray(config.shellArgs) && config.shellArgs.length > 0 && config.shellArgs.every(arg => typeof arg === 'string')
+    ? config.shellArgs
+    : DEFAULT_SHELL_ARGS
+  return { shell, args }
+}
+
+/** Quote for the shell line: a post name may hold spaces or quotes. */
 function shellQuote(value) {
   return `'${value.replace(/'/g, `'\\''`)}'`
 }
@@ -135,22 +167,38 @@ async function finish(job, code) {
   emit(job, { type: 'exit', code, durationMs: Date.now() - job.startedAt })
 }
 
-async function start(job, { cmd, cwd, postsDir }) {
+async function start(job, { cmd, cwd, postsDir, shell = DEFAULT_SHELL, shellArgs = DEFAULT_SHELL_ARGS }) {
   try {
     job.prevMtimes = await snapshotMtimes(cwd, postsDir)
     if (job.stopRequested)
       return
 
-    const child = spawn('zsh', ['-lic', cmd], {
+    const { command, args } = ptyCommand(shell, shellArgs, cmd)
+    const child = spawn(command, args, {
       cwd,
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: process.env,
+      env: { ...process.env, TERM: 'dumb', NO_COLOR: '1' },
     })
     job.child = child
 
-    child.stdout.on('data', chunk => emit(job, { type: 'stdout', text: chunk.toString() }))
-    child.stderr.on('data', chunk => emit(job, { type: 'stderr', text: chunk.toString() }))
+    let atStart = true
+    const decode = (chunk) => {
+      // A pty ends its lines with CRLF; the log view only needs the LF.
+      const text = chunk.toString().replace(/\r\n/g, `\n`)
+      if (!atStart)
+        return text
+
+      // p10k's instant prompt clears itself by sending EOT, which a pty echoes as the
+      // literal `^D` plus backspaces before the command runs.
+      atStart = false
+      let start = text.startsWith('^D') ? 2 : 0
+      while (start < text.length && text.charCodeAt(start) === 8)
+        start += 1
+      return text.slice(start)
+    }
+    child.stdout.on('data', chunk => emit(job, { type: 'stdout', text: decode(chunk) }))
+    child.stderr.on('data', chunk => emit(job, { type: 'stderr', text: decode(chunk) }))
     child.on('error', err => emit(job, { type: 'error', message: err.message }))
     child.on('close', code => finish(job, code))
   }
@@ -168,7 +216,7 @@ async function start(job, { cmd, cwd, postsDir }) {
  * `{file}` is expanded once, at spawn time: attaching to a job that is already
  * running must not depend on the caller still having the same post open.
  */
-export function runCommand({ id, cmd, cwd, postsDir = '_posts', file, onEvent }) {
+export function runCommand({ id, cmd, cwd, postsDir = '_posts', file, shell, shellArgs, onEvent }) {
   const existing = jobs.get(id)
   if (existing?.running) {
     return { job: existing, detach: attachJob(id, { from: 0, onEvent }) }
@@ -194,7 +242,7 @@ export function runCommand({ id, cmd, cwd, postsDir = '_posts', file, onEvent })
   jobs.set(id, job)
 
   const detach = attachJob(id, { from: 0, onEvent })
-  start(job, { cmd: commandLine, cwd, postsDir })
+  start(job, { cmd: commandLine, cwd, postsDir, shell, shellArgs })
 
   return { job, detach }
 }
