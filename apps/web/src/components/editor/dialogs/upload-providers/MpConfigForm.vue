@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { optionalString, requiredString, toTypedSchema } from '@/lib/form-schema'
 import UploadProviderForm from './UploadProviderForm.vue'
 import UploadProviderTextField from './UploadProviderTextField.vue'
@@ -21,6 +23,7 @@ const { config, saveConfig } = useUploadProviderConfig(`mpConfig`, {
   proxyOrigin: ``,
   appID: ``,
   appsecret: ``,
+  replaceDraft: true,
 })
 // A proxy saved earlier keeps its field (and stays clearable) even where it is no longer required.
 const showProxyField = computed(() => isProxyRequired.value || Boolean(config.value.proxyOrigin))
@@ -37,6 +40,21 @@ const showProxyField = computed(() => isProxyRequired.value || Boolean(config.va
     />
     <UploadProviderTextField name="appID" label="appID" :placeholder="t('upload.placeholders.appId')" required />
     <UploadProviderTextField name="appsecret" label="appsecret" :placeholder="t('upload.placeholders.appSecret')" required />
+
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex min-w-0 flex-col">
+        <Label for="mp-replace-draft" class="text-sm leading-snug">{{ t('upload.labels.replaceDraft') }}</Label>
+        <p class="text-xs text-muted-foreground leading-snug">
+          {{ t('upload.help.replaceDraftHint') }}
+        </p>
+      </div>
+      <Switch
+        id="mp-replace-draft"
+        class="shrink-0"
+        :model-value="config.replaceDraft !== false"
+        @update:model-value="config.replaceDraft = $event"
+      />
+    </div>
 
     <FormItem>
       <div class="flex flex-col items-start">

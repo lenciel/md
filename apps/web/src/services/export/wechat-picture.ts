@@ -61,6 +61,10 @@ export async function resolvePictureImages(container: ParentNode): Promise<Pictu
   const { manifest } = await studioApi.wxmpManifest()
   const updates: Record<string, StudioWxmpRecord> = {}
   const failures: string[] = []
+  // One post may reference the same file more than once (and `{% picture a %}` resolves to
+  // the same path as `{% picture a.png %}`). Those references share one upload: WeChat has
+  // no dedupe of its own, so a second pass would leave a second material behind.
+  const pending = new Map<string, Promise<string>>()
   let uploaded = 0
   let reused = 0
 
@@ -74,14 +78,25 @@ export async function resolvePictureImages(container: ParentNode): Promise<Pictu
         image.src = known
         reused += 1
       }
+      else if (pending.has(asset.path)) {
+        image.src = await pending.get(asset.path)!
+        reused += 1
+      }
       else {
-        const blob = await studioApi.assetBlob(asset.path)
-        const file = await toUploadableImage(new File([blob], asset.path.split(`/`).pop() ?? `image`, { type: asset.mime }))
-        const { url, mediaId } = await uploadMpMaterial(file)
-        // Recorded against the file's own bytes: the tag resolves to those bytes every time,
-        // so reuse keys off the file, not off what was sent after any conversion.
-        updates[asset.path] = { mode: `material`, url, size: asset.size, sha256: asset.sha256, media_id: mediaId }
-        image.src = url
+        const upload = (async () => {
+          const blob = await studioApi.assetBlob(asset.path)
+          const file = await toUploadableImage(new File([blob], asset.path.split(`/`).pop() ?? `image`, { type: asset.mime }))
+          const { url, mediaId } = await uploadMpMaterial(file)
+          // Recorded against the file's own bytes: the tag resolves to those bytes every time,
+          // so reuse keys off the file, not off what was sent after any conversion.
+          updates[asset.path] = { mode: `material`, url, size: asset.size, sha256: asset.sha256, media_id: mediaId }
+          return url
+        })()
+        // A failure must not stay in the map: the next reference should retry rather than
+        // inherit someone else's rejection.
+        upload.catch(() => pending.delete(asset.path))
+        pending.set(asset.path, upload)
+        image.src = await upload
         uploaded += 1
       }
       image.removeAttribute(`data-picture-path`)

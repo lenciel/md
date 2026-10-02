@@ -220,6 +220,8 @@ export default {
     syncSuccess: `同步成功`,
     pictureFailed: `图片处理失败，未发布：{message}`,
     viewDraft: `查看草稿`,
+    draftReplaced: `已删除 {count} 个同名草稿`,
+    draftReplaceFailed: `同名草稿清理失败（不影响发布）：{message}`,
   },
   preferences: {
     title: `偏好设置`,

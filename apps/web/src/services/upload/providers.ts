@@ -456,7 +456,7 @@ const isCfWorkers = import.meta.env.CF_WORKERS === `1`
 /** The 图床 settings' 公众号 credentials, with the same-origin proxy default applied. */
 async function mpUploadConfig() {
   const configStr = await store.get(`mpConfig`)
-  const { appID, appsecret, proxyOrigin } = safeJsonParse<{ appID: string, appsecret: string, proxyOrigin?: string }>(configStr, `mp config`)
+  const { appID, appsecret, proxyOrigin, replaceDraft = true } = safeJsonParse<{ appID: string, appsecret: string, proxyOrigin?: string, replaceDraft?: boolean }>(configStr, `mp config`)
   // WeChat sends no CORS header, so a page calling its API directly only gets `Failed to fetch`.
   // Workers and the local studio both reverse-proxy /cgi-bin on their own origin; a plain web page
   // has to configure one itself (and the node test environment has no `window` at all).
@@ -467,7 +467,32 @@ async function mpUploadConfig() {
     appID,
     appsecret,
     proxyOrigin: proxyOrigin || selfProxy,
+    replaceDraft: replaceDraft !== false,
   }
+}
+
+/** Whether publishing should clear same-title drafts first (`mpConfig.replaceDraft`, default on). */
+export async function shouldReplaceDraft(): Promise<boolean> {
+  return (await mpUploadConfig()).replaceDraft
+}
+
+/**
+ * One call against the 公众号 API, through the same proxy origin as the uploads.
+ *
+ * WeChat reports failures as `errcode`/`errmsg` inside a 200 response, so the parsed body is
+ * returned as is: what a code means depends on the endpoint (the draft cleanup reads 40007 as
+ * "already gone"), and the caller is the only one that knows.
+ */
+export async function mpApiCall<T extends Record<string, any>>(
+  path: string,
+  body: Record<string, unknown> | FormData,
+): Promise<T> {
+  const { appID, appsecret, proxyOrigin } = await mpUploadConfig()
+  const accessToken = await getMpToken(appID, appsecret, proxyOrigin)
+  if (!accessToken)
+    throw new Error(t(`upload.provider.accessTokenFailed`))
+
+  return await fetch<any, T>(mpEndpoint(path, accessToken, proxyOrigin), { method: `POST`, data: body })
 }
 
 function mpEndpoint(path: string, accessToken: string, proxyOrigin?: string): string {
@@ -483,17 +508,12 @@ function mpEndpoint(path: string, accessToken: string, proxyOrigin?: string): st
  * raw `mmbiz` URL is what belongs in the article — no wsrv.nl rewriting.
  */
 export async function uploadMpMaterial(file: File): Promise<{ url: string, mediaId: string }> {
-  const { appID, appsecret, proxyOrigin } = await mpUploadConfig()
-  const accessToken = await getMpToken(appID, appsecret, proxyOrigin)
-  if (!accessToken)
-    throw new Error(t(`upload.provider.accessTokenFailed`))
-
   const formdata = new FormData()
   formdata.append(`media`, file, file.name)
 
-  const res = await fetch<any, { url?: string, media_id?: string, errcode?: number, errmsg?: string }>(
-    mpEndpoint(`/cgi-bin/material/add_material?type=image&`, accessToken, proxyOrigin),
-    { method: `POST`, data: formdata },
+  const res = await mpApiCall<{ url?: string, media_id?: string, errcode?: number, errmsg?: string }>(
+    `/cgi-bin/material/add_material?type=image&`,
+    formdata,
   )
 
   if (!res.url || !res.media_id) {

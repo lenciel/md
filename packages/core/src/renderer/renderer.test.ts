@@ -131,6 +131,31 @@ $$ITE_{i}=Y_{i,1}-Y_{i,0} \\tag{1}$$`
     expect(headings[headings.length - 1]).toEqual({ level: 4, text: `脚注` })
   })
 
+  it('separates the reference list from the body with a paste-safe divider', () => {
+    const renderer = initRenderer({
+      citeStatus: true,
+      renderMessages: { footnoteTitle: `脚注`, unknownComponent: ``, katexLoading: `` },
+    })
+    const { html, readingTime } = renderMarkdown(`# Doc\n\n[link](https://example.com)`, renderer)
+    const processed = postProcessHtml(html, readingTime, renderer)
+
+    const dividerIndex = processed.indexOf(`<section class="md-divider"`)
+    expect(dividerIndex).toBeGreaterThan(-1)
+    expect(dividerIndex).toBeLessThan(processed.indexOf(`脚注`))
+    // WeChat drops <hr> on paste, so the divider must not be one.
+    expect(processed).not.toContain(`<hr`)
+  })
+
+  it('omits the reference divider when nothing is cited', () => {
+    const renderer = initRenderer({
+      citeStatus: true,
+      renderMessages: { footnoteTitle: `脚注`, unknownComponent: ``, katexLoading: `` },
+    })
+    const { html, readingTime } = renderMarkdown(`# Doc\n\nplain text`, renderer)
+
+    expect(postProcessHtml(html, readingTime, renderer)).not.toContain(`md-divider`)
+  })
+
   it('clears collected headings on reset', () => {
     const renderer = initRenderer({})
     renderMarkdown(`# Old`, renderer)

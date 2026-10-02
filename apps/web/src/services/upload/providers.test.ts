@@ -152,4 +152,20 @@ describe(`mp material upload (article pictures)`, () => {
     const urls = mock.mock.calls.map(([input]) => String(input))
     expect(urls.every(url => url.startsWith(`https://api.weixin.qq.com/cgi-bin/`))).toBe(true)
   })
+
+  // Article pictures are 永久素材 on purpose: they show up in 公众号后台的素材管理 and can be
+  // managed there. The 图床's no-quota `media/uploadimg` would keep them out of the library,
+  // so this must never gain an uploadimg fallback — not even for the small rasters it prefers.
+  it(`uploads through material/add_material, never through the 图床's uploadimg`, async () => {
+    const mock = stubWechatApi({
+      tokenBody: { access_token: `TOKEN`, expires_in: 7200 },
+      uploadBody: { media_id: `MID`, url: `https://mmbiz.qpic.cn/pic` },
+    })
+
+    await uploadMpMaterial(pngFile())
+
+    const urls = mock.mock.calls.map(([input]) => String(input))
+    expect(urls.some(url => url.includes(`material/add_material`))).toBe(true)
+    expect(urls.some(url => url.includes(`media/uploadimg`))).toBe(false)
+  })
 })

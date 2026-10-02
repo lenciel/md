@@ -49,6 +49,15 @@ const MP_WEIXIN_LINK_REGEX = /^https?:\/\/mp\.weixin\.qq\.com/
 /** Locale-neutral English fallbacks; Web injects localized strings via IOpts. */
 const DEFAULT_COUNT_SUMMARY = `{words} words, about {minutes} min read`
 const DEFAULT_FOOTNOTE_TITLE = `References`
+/**
+ * The rule between the body and the reference list. WeChat's paste whitelist has no `<hr>`
+ * (the platform's tag lists omit it and its editor drops unknown tags), while `<section>` and
+ * the `border` / `margin` / `height` in the inline style are explicitly supported — so the
+ * divider is a section that carries its own look instead of relying on theme CSS.
+ * The grey is mid-tone rather than `rgba(0, 0, 0, 0.1)` like the themes' `hr`, so it stays
+ * visible in the dark preview too; the pasted copy is always rendered light.
+ */
+const FOOTNOTE_DIVIDER = `<section class="md-divider" style="border-top: 1px solid rgba(128, 128, 128, 0.35); height: 0; font-size: 0; line-height: 0; margin: 1.6em 0 0;"></section>`
 
 const ADDITION_STYLE = `
     <style>
@@ -276,7 +285,8 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
 
     const footnoteTitle = opts.renderMessages?.footnoteTitle || DEFAULT_FOOTNOTE_TITLE
     return (
-      styledContent(`h4`, footnoteTitle)
+      FOOTNOTE_DIVIDER
+      + styledContent(`h4`, footnoteTitle)
       + styledContent(`footnotes`, buildFootnoteArray(footnotes), `p`)
     )
   }

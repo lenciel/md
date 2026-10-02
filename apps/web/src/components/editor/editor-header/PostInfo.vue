@@ -3,7 +3,9 @@ import type { Post, PostAccount } from '@md/shared/types'
 import type { WechatArticle } from '@/types/wechat'
 import { Check, ChevronDown, ChevronRight, Info, Loader2, Minus } from '@lucide/vue'
 import { CheckboxIndicator, CheckboxRoot, Primitive } from 'reka-ui'
+import { replaceDraftsWithTitle } from '@/services/export/mp-draft'
 import { articleMetadata, firstContentImage, resolveWechatArticle } from '@/services/export/wechat-article'
+import { shouldReplaceDraft } from '@/services/upload/providers'
 import { useEditorStore } from '@/stores/editor'
 import { useRenderStore } from '@/stores/render'
 import { useStudioStore } from '@/stores/studio'
@@ -247,6 +249,24 @@ async function post() {
   }
 
   form.value.accounts = allAccounts.value.filter(a => a.checked && a.loggedIn)
+
+  // The editor flow saves a *new* draft on every publish, so a post pushed twice ends up with
+  // two drafts of the same title. `draft/update` only applies to drafts this app created
+  // itself, so the old copy is deleted and the editor writes a fresh one in its place.
+  const pushingToWechat = form.value.accounts.some(account => account.type === `wechat`)
+  if (pushingToWechat && article.title && await shouldReplaceDraft()) {
+    try {
+      const replaced = await replaceDraftsWithTitle(article.title)
+      if (replaced > 0)
+        toast.success(t(`postTask.draftReplaced`, { count: replaced }))
+    }
+    catch (error) {
+      // Housekeeping for the 草稿箱 never blocks the publish itself.
+      toast.warning(t(`postTask.draftReplaceFailed`, {
+        message: error instanceof Error ? error.message : String(error),
+      }))
+    }
+  }
 
   // cose fills the body and the title of the draft it opens, but it has no path to 封面/摘要/作者.
   // Those are queued for the editor page through our own extension, which is where the

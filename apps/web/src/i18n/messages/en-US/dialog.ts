@@ -220,6 +220,8 @@ export default {
     syncSuccess: `Sync succeeded`,
     pictureFailed: `Picture handling failed, nothing was published: {message}`,
     viewDraft: `View draft`,
+    draftReplaced: `Deleted {count} same-title draft(s)`,
+    draftReplaceFailed: `Could not clear same-title drafts (publishing continues): {message}`,
   },
   preferences: {
     title: `Preferences`,

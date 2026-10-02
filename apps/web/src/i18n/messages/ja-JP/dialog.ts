@@ -220,6 +220,8 @@ export default {
     syncSuccess: `同期に成功しました`,
     pictureFailed: `画像の処理に失敗したため、公開しませんでした：{message}`,
     viewDraft: `下書きを表示`,
+    draftReplaced: `同名の下書きを {count} 件削除しました`,
+    draftReplaceFailed: `同名の下書きを整理できませんでした（公開は続行します）：{message}`,
   },
   preferences: {
     title: `環境設定`,
