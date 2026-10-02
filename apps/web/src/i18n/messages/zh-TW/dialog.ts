@@ -1,5 +1,17 @@
 export default {
   share: {
+    local: {
+      title: `本機預覽（無需登入）`,
+      description: `用 studio 本機服務產生連結，手機連同一 Wi-Fi 掃碼即可看到公眾號裡的排版。`,
+      action: `產生預覽連結`,
+      generating: `產生中…`,
+      qrAlt: `預覽連結 QR Code`,
+      lanHint: `手機掃碼，或在同一 Wi-Fi 下用手機瀏覽器開啟這個網址：`,
+      noLanHint: `找不到區域網路位址，只能在電腦上開啟：`,
+      openHere: `在電腦上開啟`,
+      copied: `連結已複製`,
+      failed: `本機預覽產生失敗：{message}`,
+    },
     title: `分享預覽`,
     description: `生成與編輯器預覽一致的只讀連結，便於轉發給他人檢視。`,
     notConfiguredTitle: `分享服務未配置`,

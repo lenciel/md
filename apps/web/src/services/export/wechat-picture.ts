@@ -97,8 +97,11 @@ export async function resolvePictureImages(container: ParentNode): Promise<Pictu
   if (Object.keys(updates).length > 0)
     await studioApi.saveWxmpManifest(updates)
 
-  if (failures.length > 0)
+  if (failures.length > 0) {
+    // The toast is easy to miss and carries one line; the console keeps the whole list.
+    console.warn(`[md] pictures that never became WeChat material`, failures)
     throw new Error(t(`upload.picture.failed`, { items: failures.join(`; `) }))
+  }
 
   return { uploaded, reused }
 }

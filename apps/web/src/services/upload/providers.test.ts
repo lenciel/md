@@ -23,7 +23,7 @@ vi.mock(`@/services/upload/client`, () => ({
   uploadDefaultImage: vi.fn(),
 }))
 
-const { fileUpload } = await import(`./providers`)
+const { fileUpload, uploadMpMaterial } = await import(`./providers`)
 
 function wechatResponse(body: unknown, contentType: string) {
   return new Response(JSON.stringify(body), {
@@ -109,5 +109,47 @@ describe(`mp (WeChat Official Account) image upload`, () => {
     await expect(fileUpload(`content`, pngFile())).rejects.toThrow(
       `upload.provider.accessTokenFailed: [40164] invalid ip 1.2.3.4 not in whitelist hint`,
     )
+  })
+})
+
+// WeChat answers no CORS header, so a page calling it directly only gets `Failed to fetch`.
+// The studio serves its own /cgi-bin reverse proxy, and uploads must go through it.
+describe(`mp material upload (article pictures)`, () => {
+  beforeEach(() => {
+    memStore.clear()
+    memStore.set(`mpConfig`, JSON.stringify({ appID: `wx1234567890`, appsecret: `secret` }))
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it(`goes through the studio's same-origin /cgi-bin proxy`, async () => {
+    vi.stubGlobal(`window`, {
+      __MD_STUDIO__: true,
+      location: { href: `http://127.0.0.1:8790/`, origin: `http://127.0.0.1:8790` },
+    })
+    const mock = stubWechatApi({
+      tokenBody: { access_token: `TOKEN`, expires_in: 7200 },
+      uploadBody: { media_id: `MID`, url: `https://mmbiz.qpic.cn/pic` },
+    })
+
+    await uploadMpMaterial(pngFile())
+
+    const urls = mock.mock.calls.map(([input]) => String(input))
+    expect(urls).toHaveLength(2)
+    expect(urls.every(url => url.startsWith(`http://127.0.0.1:8790/cgi-bin/`))).toBe(true)
+  })
+
+  it(`goes straight to WeChat when no proxy is available (plain web page)`, async () => {
+    const mock = stubWechatApi({
+      tokenBody: { access_token: `TOKEN`, expires_in: 7200 },
+      uploadBody: { media_id: `MID`, url: `https://mmbiz.qpic.cn/pic` },
+    })
+
+    await uploadMpMaterial(pngFile())
+
+    const urls = mock.mock.calls.map(([input]) => String(input))
+    expect(urls.every(url => url.startsWith(`https://api.weixin.qq.com/cgi-bin/`))).toBe(true)
   })
 })

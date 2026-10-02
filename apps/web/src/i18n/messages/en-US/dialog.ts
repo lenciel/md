@@ -1,5 +1,17 @@
 export default {
   share: {
+    local: {
+      title: `Local preview (no account)`,
+      description: `Served by the local studio: scan the code on a phone in the same Wi-Fi to see the WeChat layout.`,
+      action: `Create preview link`,
+      generating: `Creating…`,
+      qrAlt: `Preview link QR code`,
+      lanHint: `Scan the code, or open this address in a phone browser on the same Wi-Fi:`,
+      noLanHint: `No LAN address was found, so this opens on this machine only:`,
+      openHere: `Open here`,
+      copied: `Link copied`,
+      failed: `Local preview failed: {message}`,
+    },
     title: `Share Preview`,
     description: `Generate a read-only link that matches the editor preview for easy sharing.`,
     notConfiguredTitle: `Share service not configured`,

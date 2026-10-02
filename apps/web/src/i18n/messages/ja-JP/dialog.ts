@@ -1,5 +1,17 @@
 export default {
   share: {
+    local: {
+      title: `ローカルプレビュー（ログイン不要）`,
+      description: `ローカルの studio が配信します。同じ Wi-Fi のスマホで QR を読むと WeChat の組版を確認できます。`,
+      action: `プレビューリンクを作成`,
+      generating: `作成中…`,
+      qrAlt: `プレビューリンクの QR コード`,
+      lanHint: `QR を読み取るか、同じ Wi-Fi のスマホのブラウザでこのアドレスを開いてください：`,
+      noLanHint: `LAN アドレスが見つからないため、この端末でのみ開けます：`,
+      openHere: `この端末で開く`,
+      copied: `リンクをコピーしました`,
+      failed: `ローカルプレビューに失敗しました：{message}`,
+    },
     title: `共有プレビュー`,
     description: `エディターのプレビューと一致する読み取り専用リンクを生成し、簡単に共有できます。`,
     notConfiguredTitle: `共有サービスが未設定です`,

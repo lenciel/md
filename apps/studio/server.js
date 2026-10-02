@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { readFileSync, statSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -19,6 +20,8 @@ import {
   writeFilePreservingMode,
   writeWxmpManifest,
 } from './workspace.js'
+
+const WECHAT_API_ORIGIN = 'https://api.weixin.qq.com'
 
 // Vite's dev proxy forwards the original Origin, so both loopback spellings are allowed.
 const ORIGIN_RE = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/
@@ -105,6 +108,30 @@ export function createStudioApp({ config, distDir, shareOrigins = {} }) {
   const readShell = createIndexHtmlReader(distDir)
   const app = express()
 
+  // WeChat's API sends no CORS header, so a page calling it directly only gets `Failed to fetch`.
+  // The deployed app proxies through its own Worker (apps/web/worker); locally the studio plays that
+  // role: `/cgi-bin/*` is forwarded verbatim to api.weixin.qq.com.
+  // Registered before express.json so the body stays raw bytes (multipart material uploads).
+  app.use('/cgi-bin', express.raw({ type: () => true, limit: '32mb' }), async (req, res) => {
+    const target = `${WECHAT_API_ORIGIN}${req.originalUrl}`
+
+    try {
+      const upstream = await fetch(target, {
+        method: req.method,
+        headers: { 'content-type': req.get('content-type') ?? 'application/json' },
+        body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
+        redirect: 'follow',
+      })
+      res.status(upstream.status)
+      res.set('Content-Type', upstream.headers.get('content-type') ?? 'application/json')
+      res.send(Buffer.from(await upstream.arrayBuffer()))
+    }
+    catch (err) {
+      console.warn(`[studio] WeChat API unreachable: ${target.replace(/\?.*$/, '')} — ${err.message}`)
+      res.status(502).json({ error: 'wechat-unreachable', message: err.message })
+    }
+  })
+
   app.use(express.json({ limit: '10mb' }))
 
   // The custom header forces a CORS preflight, so no token/CORS handling is needed.
@@ -160,7 +187,7 @@ export function createStudioApp({ config, distDir, shareOrigins = {} }) {
     }
     catch (err) {
       if (err instanceof StudioError && err.status === 404)
-        console.warn(`[studio] 找不到文章引用的资源: ${path}`)
+        console.warn(`[studio] missing asset referenced by the post: ${path}`)
       throw err
     }
   }

@@ -1,5 +1,17 @@
 export default {
   share: {
+    local: {
+      title: `本机预览（无需登录）`,
+      description: `用 studio 本地服务生成链接，手机连同一 Wi-Fi 扫码即可看到公众号里的排版。`,
+      action: `生成预览链接`,
+      generating: `生成中…`,
+      qrAlt: `预览链接二维码`,
+      lanHint: `手机扫码，或在同一 Wi-Fi 下用手机浏览器打开这个地址：`,
+      noLanHint: `没找到局域网地址，只能在电脑上打开：`,
+      openHere: `在电脑上打开`,
+      copied: `链接已复制`,
+      failed: `本机预览生成失败：{message}`,
+    },
     title: `分享预览`,
     description: `生成与编辑器预览一致的只读链接，便于转发给他人查看。`,
     notConfiguredTitle: `分享服务未配置`,

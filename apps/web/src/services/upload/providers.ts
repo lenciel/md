@@ -453,15 +453,20 @@ async function getMpToken(appID: string, appsecret: string, proxyOrigin?: string
 }
 const isCfWorkers = import.meta.env.CF_WORKERS === `1`
 
-/** The 图床 settings' 公众号 credentials, with the Workers self-proxy default applied. */
+/** The 图床 settings' 公众号 credentials, with the same-origin proxy default applied. */
 async function mpUploadConfig() {
   const configStr = await store.get(`mpConfig`)
   const { appID, appsecret, proxyOrigin } = safeJsonParse<{ appID: string, appsecret: string, proxyOrigin?: string }>(configStr, `mp config`)
+  // WeChat sends no CORS header, so a page calling its API directly only gets `Failed to fetch`.
+  // Workers and the local studio both reverse-proxy /cgi-bin on their own origin; a plain web page
+  // has to configure one itself (and the node test environment has no `window` at all).
+  const selfProxy = isCfWorkers || (typeof window !== `undefined` && Boolean(window.__MD_STUDIO__))
+    ? window.location.origin
+    : undefined
   return {
     appID,
     appsecret,
-    // When no proxy is configured on CF Workers, use the current origin
-    proxyOrigin: proxyOrigin || (isCfWorkers ? window.location.origin : undefined),
+    proxyOrigin: proxyOrigin || selfProxy,
   }
 }
 

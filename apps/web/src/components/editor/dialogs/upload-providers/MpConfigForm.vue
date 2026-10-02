@@ -8,7 +8,8 @@ import { useUploadProviderConfig } from './useUploadProviderConfig'
 const { t } = useI18n()
 const isWebsite = window.location.protocol.startsWith(`http`)
 const isCfWorkers = import.meta.env.CF_WORKERS === `1`
-const isProxyRequired = computed(() => isWebsite && !isCfWorkers)
+// The studio reverse-proxies /cgi-bin on its own origin, so no proxy domain is needed locally.
+const isProxyRequired = computed(() => isWebsite && !isCfWorkers && !window.__MD_STUDIO__)
 const schema = computed(() => toTypedSchema(z.object({
   proxyOrigin: isProxyRequired.value
     ? requiredString(t(`upload.validation.proxyRequired`))
@@ -21,16 +22,18 @@ const { config, saveConfig } = useUploadProviderConfig(`mpConfig`, {
   appID: ``,
   appsecret: ``,
 })
+// A proxy saved earlier keeps its field (and stays clearable) even where it is no longer required.
+const showProxyField = computed(() => isProxyRequired.value || Boolean(config.value.proxyOrigin))
 </script>
 
 <template>
   <UploadProviderForm :validation-schema="schema" :initial-values="config" @submit="saveConfig">
     <UploadProviderTextField
-      v-if="isProxyRequired"
+      v-if="showProxyField"
       name="proxyOrigin"
       :label="t('upload.labels.proxyDomain')"
       :placeholder="t('upload.placeholders.proxyExample')"
-      required
+      :required="isProxyRequired"
     />
     <UploadProviderTextField name="appID" label="appID" :placeholder="t('upload.placeholders.appId')" required />
     <UploadProviderTextField name="appsecret" label="appsecret" :placeholder="t('upload.placeholders.appSecret')" required />
