@@ -49,6 +49,7 @@ const MP_WEIXIN_LINK_REGEX = /^https?:\/\/mp\.weixin\.qq\.com/
 /** Locale-neutral English fallbacks; Web injects localized strings via IOpts. */
 const DEFAULT_COUNT_SUMMARY = `{words} words, about {minutes} min read`
 const DEFAULT_FOOTNOTE_TITLE = `References`
+const DEFAULT_SIDENOTE_TITLE = `Footnotes`
 /**
  * The rule between the body and the reference list. WeChat's paste whitelist has no `<hr>`
  * (the platform's tag lists omit it and its editor drops unknown tags), while `<section>` and
@@ -76,14 +77,14 @@ const ADDITION_STYLE = `
     </style>
   `
 
-function buildFootnoteArray(footnotes: [number, string, string][]): string {
+/** Entry bodies for the cited-link list, in citation order; `buildFootnotes` wraps each. */
+function buildFootnoteArray(footnotes: [number, string, string][]): string[] {
   return footnotes
     .map(([index, title, link]) =>
       link === title
-        ? `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code>: <i style="word-break: break-all">${title}</i><br/>`
-        : `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i><br/>`,
+        ? `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code>: <i style="word-break: break-all">${title}</i>`
+        : `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i>`,
     )
-    .join(`\n`)
 }
 
 function extractFileName(href: string): string {
@@ -210,6 +211,9 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
   const listCounters: number[] = []
   const headings: CollectedHeading[] = []
   const markdownParser = new Marked()
+  // Held so buildFootnotes() can place the collected [^id] definitions in the
+  // reference section instead of where they were written.
+  const footnotesExtension = markedFootnotes()
 
   markdownParser.setOptions({
     breaks: true,
@@ -279,15 +283,23 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
   }
 
   const buildFootnotes = () => {
-    if (!footnotes.length) {
+    const definitions = footnotesExtension.renderDefinitions()
+    if (!footnotes.length && !definitions) {
       return ``
     }
 
+    // Sidenote bodies first, then the cited links: the blog's own order, footnotes
+    // before bibliography, and both under the single paste-safe divider. Every entry is
+    // its own block so a theme can space entries apart without touching their leading.
+    const sidenoteTitle = opts.renderMessages?.sidenoteTitle || DEFAULT_SIDENOTE_TITLE
     const footnoteTitle = opts.renderMessages?.footnoteTitle || DEFAULT_FOOTNOTE_TITLE
+    const citedEntries = buildFootnoteArray(footnotes)
+      .map(body => styledContent(`footnotes`, body, `p`))
+      .join(`\n`)
     return (
       FOOTNOTE_DIVIDER
-      + styledContent(`h4`, footnoteTitle)
-      + styledContent(`footnotes`, buildFootnoteArray(footnotes), `p`)
+      + (definitions ? styledContent(`h4`, sidenoteTitle) + definitions : ``)
+      + (footnotes.length ? styledContent(`h4`, footnoteTitle) + citedEntries : ``)
     )
   }
 
@@ -494,7 +506,7 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
     nonStandard: true,
     getKatexLoadingMessage: () => opts.renderMessages?.katexLoading,
   }, true))
-  markdownParser.use(markedFootnotes())
+  markdownParser.use(footnotesExtension)
   markdownParser.use(markedMermaid(() => ({
     themeMode: opts.themeMode,
     diagramMessages: opts.diagramMessages,

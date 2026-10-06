@@ -258,6 +258,7 @@ function renderHistoryContent(content: string): string {
     },
     renderMessages: {
       footnoteTitle: t(`store.render.footnoteTitle`),
+      sidenoteTitle: t(`store.render.sidenoteTitle`),
       unknownComponent: t(`store.render.unknownComponent`),
       katexLoading: t(`store.render.katexLoading`),
     },

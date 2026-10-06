@@ -107,6 +107,7 @@ export default {
     },
     render: {
       footnoteTitle: `References`,
+      sidenoteTitle: `Footnotes`,
       unknownComponent: `Unknown component: {name}`,
       katexLoading: `Loading formula…`,
       renderFailed: `Render failed`,

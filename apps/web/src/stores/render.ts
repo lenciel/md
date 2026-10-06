@@ -55,6 +55,7 @@ export const useRenderStore = defineStore(`render`, () => {
 
   const buildRenderMessages = () => ({
     footnoteTitle: t(`store.render.footnoteTitle`),
+    sidenoteTitle: t(`store.render.sidenoteTitle`),
     unknownComponent: t(`store.render.unknownComponent`),
     katexLoading: t(`store.render.katexLoading`),
   })
@@ -92,6 +93,7 @@ export const useRenderStore = defineStore(`render`, () => {
       buildComponentFingerprint(componentStore),
       t(`store.count.summary`, { words: `{words}`, minutes: `{minutes}` }),
       t(`store.render.footnoteTitle`),
+      t(`store.render.sidenoteTitle`),
       t(`store.render.unknownComponent`),
       t(`store.render.katexLoading`),
       t(`store.diagram.mermaidLoading`),

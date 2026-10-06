@@ -22,8 +22,10 @@ export interface CountMessages {
 
 /** Render-pipeline UI copy (injected by locale on Web) */
 export interface RenderMessages {
-  /** Footnote reference link title */
+  /** Title of the cited-link list (`引用链接`) */
   footnoteTitle: string
+  /** Title of the `[^id]` sidenote / footnote definition list (`脚注`) */
+  sidenoteTitle: string
   /** Unknown custom component message; supports `{name}` placeholder */
   unknownComponent: string
   /** Block math loading placeholder */

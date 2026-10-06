@@ -418,11 +418,21 @@ li {
 }
 
 /* Footnotes */
-/* footnotes rendered as <p> in buildFootnotes() */
+/* Both lists built in buildFootnotes(): cited links and the [^id] note bodies, one <p>
+   per entry. Entries stack with no vertical margin, which is the single line box a
+   `<br/>`-separated list used to leave between them — so a theme can widen the gap
+   between entries without changing the leading inside a wrapped entry. */
 p.footnotes {
-  margin: calc(0.5em * var(--md-block-spacing)) 8px;
+  margin: 0 8px;
   font-size: 80%;
   color: hsl(var(--foreground));
+  /* Note bodies carry URLs; the cited-link list breaks its own <i> instead. */
+  overflow-wrap: break-word;
+}
+
+/* Trailing breath at the very end of the article, where no following block supplies one. */
+p.footnotes:last-of-type {
+  margin-bottom: calc(0.5em * var(--md-block-spacing));
 }
 
 /* Diagrams */

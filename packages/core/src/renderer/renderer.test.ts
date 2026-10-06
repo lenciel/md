@@ -53,6 +53,7 @@ describe('initRenderer', () => {
       citeStatus: true,
       renderMessages: {
         footnoteTitle: `引用リンク`,
+        sidenoteTitle: `注釈`,
         unknownComponent: `不明: {name}`,
         katexLoading: `数式読込中`,
       },
@@ -121,7 +122,7 @@ $$ITE_{i}=Y_{i,1}-Y_{i,0} \\tag{1}$$`
   it('includes the footnote title after postProcessHtml', () => {
     const renderer = initRenderer({
       citeStatus: true,
-      renderMessages: { footnoteTitle: `脚注`, unknownComponent: ``, katexLoading: `` },
+      renderMessages: { footnoteTitle: `脚注`, sidenoteTitle: `边注`, unknownComponent: ``, katexLoading: `` },
     })
     const { html, readingTime } = renderMarkdown(`# Doc\n\n[link](https://example.com)`, renderer)
     postProcessHtml(html, readingTime, renderer)
@@ -134,7 +135,7 @@ $$ITE_{i}=Y_{i,1}-Y_{i,0} \\tag{1}$$`
   it('separates the reference list from the body with a paste-safe divider', () => {
     const renderer = initRenderer({
       citeStatus: true,
-      renderMessages: { footnoteTitle: `脚注`, unknownComponent: ``, katexLoading: `` },
+      renderMessages: { footnoteTitle: `脚注`, sidenoteTitle: `边注`, unknownComponent: ``, katexLoading: `` },
     })
     const { html, readingTime } = renderMarkdown(`# Doc\n\n[link](https://example.com)`, renderer)
     const processed = postProcessHtml(html, readingTime, renderer)
@@ -149,11 +150,49 @@ $$ITE_{i}=Y_{i,1}-Y_{i,0} \\tag{1}$$`
   it('omits the reference divider when nothing is cited', () => {
     const renderer = initRenderer({
       citeStatus: true,
-      renderMessages: { footnoteTitle: `脚注`, unknownComponent: ``, katexLoading: `` },
+      renderMessages: { footnoteTitle: `脚注`, sidenoteTitle: `边注`, unknownComponent: ``, katexLoading: `` },
     })
     const { html, readingTime } = renderMarkdown(`# Doc\n\nplain text`, renderer)
 
     expect(postProcessHtml(html, readingTime, renderer)).not.toContain(`md-divider`)
+  })
+
+  it('puts sidenote bodies in their own list under the divider, without citations', () => {
+    const renderer = initRenderer({
+      citeStatus: false,
+      renderMessages: { footnoteTitle: `脚注`, sidenoteTitle: `边注`, unknownComponent: ``, katexLoading: `` },
+    })
+    const { html, readingTime } = renderMarkdown(`# Doc\n\n正文[^a] 结束\n\n[^a]: 边注内容`, renderer)
+    const processed = postProcessHtml(html, readingTime, renderer)
+
+    const dividerIndex = processed.indexOf(`<section class="md-divider"`)
+    const titleIndex = processed.indexOf(`边注`)
+    const bodyIndex = processed.indexOf(`边注内容`)
+    expect(dividerIndex).toBeGreaterThan(-1)
+    expect(dividerIndex).toBeLessThan(titleIndex)
+    expect(titleIndex).toBeLessThan(bodyIndex)
+    // The definition left the body: only the collected list carries it now.
+    expect(processed.match(/边注内容/g)).toHaveLength(1)
+    expect(processed).toContain(`id="fnDef-a"`)
+    expect(processed).not.toContain(`脚注`)
+  })
+
+  it('lists sidenotes before cited links under one divider', () => {
+    const renderer = initRenderer({
+      citeStatus: true,
+      renderMessages: { footnoteTitle: `引用链接`, sidenoteTitle: `脚注`, unknownComponent: ``, katexLoading: `` },
+    })
+    const { html, readingTime } = renderMarkdown(`# Doc\n\n正文[^a] 与 [link](https://example.com)\n\n[^a]: note body`, renderer)
+    const processed = postProcessHtml(html, readingTime, renderer)
+
+    const divider = processed.indexOf(`<section class="md-divider"`)
+    const sidenote = processed.indexOf(`脚注`)
+    const citedTitle = processed.indexOf(`引用链接`)
+    expect(divider).toBeGreaterThan(-1)
+    expect(divider).toBeLessThan(sidenote)
+    expect(sidenote).toBeLessThan(citedTitle)
+    expect(processed.indexOf(`note body`)).toBeLessThan(citedTitle)
+    expect(processed.match(/md-divider/g)).toHaveLength(1)
   })
 
   it('clears collected headings on reset', () => {

@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { initRenderer } from '../renderer/renderer-impl'
-import { renderMarkdown } from '../utils/markdownHelpers'
+import { postProcessHtml, renderMarkdown } from '../utils/markdownHelpers'
 import { expandJekyllSource } from './jekyll'
 
+/** Article HTML: sidenote definitions are placed by buildFootnotes(), not in the body. */
 function render(md: string): string {
-  return renderMarkdown(md, initRenderer({})).html
+  const renderer = initRenderer({})
+  const { html, readingTime } = renderMarkdown(md, renderer)
+  return postProcessHtml(html, readingTime, renderer)
 }
 
 describe(`jekyll source rewrites`, () => {
@@ -12,8 +15,8 @@ describe(`jekyll source rewrites`, () => {
     const html = render(`正文{% sidenote 'sn-id-1' '这是一个 sidenote 的示例' %}继续。`)
 
     expect(html).not.toContain(`{% sidenote`)
-    expect(html).toContain(`<a href="#fnDef-sn-id-1" id="fnRef-sn-id-1">[1]</a>`)
-    expect(html).toContain(`<code>1.</code>`)
+    expect(html).toContain(`id="fnRef-sn-id-1">1</a>`)
+    expect(html).toContain(`1.</code>`)
     expect(html).toContain(`这是一个 sidenote 的示例`)
   })
 
@@ -24,8 +27,8 @@ describe(`jekyll source rewrites`, () => {
       `二{% sidenote 'sn-b' '第二条' %}`,
     ].join(`\n`))
 
-    expect(html).toContain(`id="fnRef-sn-a">[1]`)
-    expect(html).toContain(`id="fnRef-sn-b">[2]`)
+    expect(html).toContain(`id="fnRef-sn-a">1`)
+    expect(html).toContain(`id="fnRef-sn-b">2`)
     expect(html).toContain(`第一条`)
     expect(html).toContain(`第二条`)
   })
@@ -33,7 +36,7 @@ describe(`jekyll source rewrites`, () => {
   it(`accepts double quotes and an extra argument, like the Liquid plugin`, () => {
     const html = render(`{% sidenote "sn-x" "双引号内容" ignored %}`)
 
-    expect(html).toContain(`id="fnRef-sn-x">[1]`)
+    expect(html).toContain(`id="fnRef-sn-x">1`)
     expect(html).toContain(`双引号内容`)
     expect(html).not.toContain(`ignored`)
   })
@@ -48,8 +51,8 @@ describe(`jekyll source rewrites`, () => {
   it(`reuses one definition when the same id repeats`, () => {
     const html = render(`A{% sidenote 'sn-1' '内容' %}B{% sidenote 'sn-1' '内容' %}`)
 
-    expect(html.match(/<code>1\.<\/code>/g)).toHaveLength(1)
-    expect(html.match(/id="fnRef-sn-1">\[1\]/g)).toHaveLength(2)
+    expect(html.match(/id="fnDef-sn-1"/g)).toHaveLength(1)
+    expect(html.match(/id="fnRef-sn-1">1</g)).toHaveLength(2)
   })
 
   it(`mixes with regular footnotes in definition order`, () => {
@@ -59,8 +62,8 @@ describe(`jekyll source rewrites`, () => {
       `[^note]: 普通脚注`,
     ].join(`\n`))
 
-    expect(html).toContain(`id="fnRef-note">[1]`)
-    expect(html).toContain(`id="fnRef-sn-1">[2]`)
+    expect(html).toContain(`id="fnRef-note">1`)
+    expect(html).toContain(`id="fnRef-sn-1">2`)
     expect(html).toContain(`普通脚注`)
     expect(html).toContain(`边注`)
   })
@@ -143,7 +146,7 @@ describe(`jekyll source rewrites`, () => {
     const html = render(`{% blockquote %}\n引文{% sidenote 'sn-q' '注解' %}\n{% endblockquote %}`)
 
     expect(html).toContain(`<blockquote`)
-    expect(html).toContain(`id="fnRef-sn-q">[1]`)
+    expect(html).toContain(`id="fnRef-sn-q">1`)
     expect(html).toContain(`注解`)
   })
 })

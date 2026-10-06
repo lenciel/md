@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { initRenderer } from '../renderer/renderer-impl'
-import { renderMarkdown } from '../utils/markdownHelpers'
+import { postProcessHtml, renderMarkdown } from '../utils/markdownHelpers'
 
 function render(md: string): string {
   return renderMarkdown(md, initRenderer({})).html
 }
 
+/** Full article HTML: definitions are collected and placed by buildFootnotes(). */
+function renderArticle(md: string): string {
+  const renderer = initRenderer({
+    citeStatus: true,
+    renderMessages: { sidenoteTitle: `脚注`, footnoteTitle: `引用链接`, unknownComponent: ``, katexLoading: `` },
+  })
+  const { html, readingTime } = renderMarkdown(md, renderer)
+  return postProcessHtml(html, readingTime, renderer)
+}
+
 describe(`footnotes extension`, () => {
   it(`renders refs and definitions with bidirectional anchors`, () => {
-    const html = render(`Text with a note[^1].\n\n[^1]: Footnote body`)
+    const html = renderArticle(`Text with a note[^1].\n\n[^1]: Footnote body`)
 
     expect(html).toContain(`href="#fnDef-1"`)
     expect(html).toContain(`id="fnRef-1"`)
@@ -16,8 +26,37 @@ describe(`footnotes extension`, () => {
     expect(html).toContain(`id="fnDef-1"`)
   })
 
+  it(`marks the ref as a bare sidenote number outside the link rule`, () => {
+    const html = renderArticle(`Text with a note[^1].\n\n[^1]: Footnote body`)
+
+    expect(html).toContain(`<sup class="md-sidenote-ref"`)
+    expect(html).toContain(`id="fnRef-1">1</a>`)
+    expect(html).not.toContain(`[1]</a>`)
+  })
+
+  it(`collects definitions below the divider instead of leaving them in the body`, () => {
+    const html = renderArticle(`Text with a note[^1].\n\n[^1]: Footnote body`)
+
+    const divider = html.indexOf(`md-divider`)
+    expect(divider).toBeGreaterThan(-1)
+    expect(divider).toBeLessThan(html.indexOf(`脚注`))
+    expect(html.indexOf(`脚注`)).toBeLessThan(html.indexOf(`Footnote body`))
+    expect(html.match(/Footnote body/g)).toHaveLength(1)
+    expect(html).toContain(`class="md-footnote-back"`)
+  })
+
+  it(`gives every entry its own block so entries can be spaced apart`, () => {
+    // The theme's entry gap is a margin between these blocks; a single <br/>-separated
+    // paragraph could only have been spaced by loosening every line inside it.
+    const html = renderArticle(`A[^a] and [link](https://example.com)\n\n[^a]: note body`)
+
+    expect(html.match(/<p class="footnotes">/g)).toHaveLength(2)
+    expect(html).not.toContain(`</a><br`)
+    expect(html).toContain(`<p class="footnotes"><code style="font-size: 90%; opacity: 0.6;">`)
+  })
+
   it(`numbers multiple footnotes in definition order`, () => {
-    const html = render(`A[^a] B[^b]\n\n[^a]: first\n[^b]: second`)
+    const html = renderArticle(`A[^a] B[^b]\n\n[^a]: first\n[^b]: second`)
 
     expect(html).toContain(`href="#fnDef-a"`)
     expect(html).toContain(`href="#fnDef-b"`)

@@ -1,11 +1,14 @@
 /**
  * MD lenciel theme (@lenciel) — ported from the lenciel.github.io article stylesheet.
  *
- * The blog's reading furniture keeps its fixed neutral values: the double
+ * The blog's reading furniture keeps its fixed values: the engraved double
  * drop-shadow on every heading, the dashed rule above h2, the inset grey quote
- * box, soft-shadowed images and the banded table. The blog's two accents are
- * mapped onto the app variables (--md-link-color / --md-primary-color) so the
- * colour pickers keep working — pick 微信蓝 links and 天空蓝 for the exact blues.
+ * box, soft-shadowed images, the banded table and the #d0648a article links.
+ * Shadows and that rule are translucent black rather than the blog's opaque
+ * greys, so a dark page stops glowing. The cost: the blog's near-white 1px
+ * highlight band turns grey on a light page too, since a translucent layer can
+ * no longer mask the darker one behind it. The accent tints follow
+ * --md-primary-color so that picker keeps working — pick 天空蓝 for the exact blues.
  *
  * Scale: every size below is a multiple of --md-font-size, taken from the blog's
  * desktop headings (37.63 / 34.50 / 31.36 / 22.40 / 20.16 / 17.92px) over its
@@ -16,6 +19,11 @@
  */
 
 /* ==================== Headings ==================== */
+/* The blog's double drop-shadow spelled as translucent black: 6% / 48% of a white
+   page is the blog's #efefef / #828887, and the same percentages over a dark page
+   land within a few levels of its background instead of painting grey on black.
+   Where the two layers overlap they stack, so that band sits ~#7d7d7d rather than
+   the blog's light #efefef — the shadow reads a hair heavier, same grey and offset. */
 h1 {
   display: block;
   padding: 0;
@@ -26,15 +34,16 @@ h1 {
   font-weight: bold;
   line-height: 1.2;
   text-align: left;
-  text-shadow: 1px 1px #efefef, 2px 2px #828887;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
 }
 
-/* Blog: every h2 carries a dashed rule above it. */
+/* Blog: every h2 carries a dashed rule above it, in the same translucent grey as
+   the heading shadow. */
 h2 {
   display: block;
   padding: calc(0.8em * var(--md-block-spacing)) 0 0;
   margin: calc(2em * var(--md-block-spacing)) 8px calc(0.5em * var(--md-block-spacing));
-  border-top: 2px dashed #828887;
+  border-top: 2px dashed rgba(0, 0, 0, 0.48);
   border-radius: 0;
   background: none;
   color: hsl(var(--foreground));
@@ -42,7 +51,7 @@ h2 {
   font-weight: bold;
   line-height: 1.35;
   text-align: left;
-  text-shadow: 1px 1px #efefef, 2px 2px #828887;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
 }
 
 h3 {
@@ -53,7 +62,7 @@ h3 {
   font-size: calc(var(--md-font-size) * 1.74);
   font-weight: bold;
   line-height: 1.35;
-  text-shadow: 1px 1px #efefef, 2px 2px #828887;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
 }
 
 h4,
@@ -63,7 +72,7 @@ h6 {
   color: hsl(var(--foreground));
   font-weight: bold;
   line-height: 1.35;
-  text-shadow: 1px 1px #efefef, 2px 2px #828887;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
 }
 
 h4 {
@@ -197,7 +206,49 @@ strong {
 }
 
 /* ==================== Links ==================== */
+/* Blog: links keep the post pink rather than the WeChat blue from default.css —
+   the 链接色 picker no longer reaches them here while custom CSS still overrides.
+
+   The blog's shadow greys (#efefef / #ccc) are opaque, so on a dark page they
+   glow brighter than the background. Black at 6% / 20% composites to exactly
+   those two greys over white, and over a dark page to ~#1c1c1c / ~#181818 —
+   i.e. the same engraved look when the page is light, nothing ugly when it is not. */
 a {
+  color: #d0648a;
   font-weight: bold;
-  text-shadow: 1px 1px #efefef, 2px 2px #ccc;
+  text-decoration: none;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.2);
+  overflow-wrap: break-word;
+}
+
+/* ==================== Sidenotes ==================== */
+/* Blog: the note marker is a bare raised number (screen.css `.sidenote-number`), sized
+   off the body rather than the link rule. It keeps the rule's own copy of the pink and
+   shadow so restyling links later leaves note numbers alone. */
+.md-sidenote-ref {
+  font-size: 0.8em;
+}
+
+.md-sidenote-ref a {
+  color: #d0648a;
+  font-weight: bold;
+  text-decoration: none;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* The ↩︎ jump-back link has no blog counterpart: keep it out of the link styling so the
+   note list stays plain text under its numbers. */
+.md-footnote-back {
+  color: inherit;
+  font-weight: normal;
+  text-shadow: none;
+}
+
+/* ==================== Footnote lists ==================== */
+/* One <p class="footnotes"> per entry (see buildFootnotes), so entries stack with the
+   body's own leading and the gap between them is only this margin: half a line box more,
+   i.e. 1.5× the room a <br/>-separated entry used to leave. Lines wrapped inside an entry
+   keep the normal leading. */
+p.footnotes + p.footnotes {
+  margin-top: calc(var(--md-line-height) * 0.5em);
 }

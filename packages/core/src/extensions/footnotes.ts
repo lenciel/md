@@ -13,13 +13,28 @@ interface MapContent {
   text: string
 }
 
-export function markedFootnotes(): MarkedExtension {
+export interface FootnotesExtension extends MarkedExtension {
+  /**
+   * Definitions for the current document, in definition order, one `p.footnotes` block
+   * per entry (the same shape the cited-link list uses). Definitions are collected rather
+   * than emitted in place so the renderer can put them under their own title at the end of
+   * the article; empty when nothing is defined.
+   */
+  renderDefinitions: () => string
+}
+
+export function markedFootnotes(): FootnotesExtension {
   const fnMap = new Map<string, MapContent>()
+  let definitions: string[] = []
 
   return {
+    renderDefinitions() {
+      return definitions.join(`\n`)
+    },
     hooks: {
       preprocess(markdown) {
         fnMap.clear()
+        definitions = []
         return markdown
       },
     },
@@ -52,19 +67,17 @@ export function markedFootnotes(): MarkedExtension {
         renderer(this: RendererThis, token: Tokens.Generic) {
           const { index, text, fnId, tokens } = token
           const body = tokens ? this.parser.parseInline(tokens) : text
-          const fnInner = `
-                <code>${index}.</code> 
-                <span>${body}</span> 
-                    <a id="fnDef-${fnId}" href="#fnRef-${fnId}" style="color: var(--md-primary-color);">\u21A9\uFE0E</a>
-                <br>`
-          if (index === 1) {
-            return `
-            <p style="font-size: 80%;margin: 0.5em 8px;word-break:break-all;">${fnInner}`
-          }
-          if (index === fnMap.size) {
-            return `${fnInner}</p>`
-          }
-          return fnInner
+          // One block per entry: the gap between entries is then a margin the theme can
+          // size, which <br/>-separated lines inside one paragraph cannot express without
+          // also loosening the leading inside a wrapped entry.
+          definitions.push(
+            `<p class="footnotes">`
+            + `<code style="font-size: 90%; opacity: 0.6;">${index}.</code> `
+            + `<span>${body}</span> `
+            + `<a class="md-footnote-back" id="fnDef-${fnId}" href="#fnRef-${fnId}">\u21A9\uFE0E</a>`
+            + `</p>`,
+          )
+          return ``
         },
       },
       {
@@ -93,9 +106,9 @@ export function markedFootnotes(): MarkedExtension {
           }
 
           const { index } = reference
-          return `<sup style="color: var(--md-primary-color);">
-                    <a href="#fnDef-${fnId}" id="fnRef-${fnId}">\[${index}\]</a>
-                </sup>`
+          // Bare number, like the blog's `.sidenote-number`; the bracketed form stays
+          // with cited links, and `.md-sidenote-ref` carries the note's own style.
+          return `<sup class="md-sidenote-ref" style="color: var(--md-primary-color);"><a href="#fnDef-${fnId}" id="fnRef-${fnId}">${index}</a></sup>`
         },
       },
     ],
