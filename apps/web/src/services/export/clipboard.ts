@@ -4,7 +4,7 @@ import { useEditorStore } from '@/stores/editor'
 import { useRenderStore } from '@/stores/render'
 import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
-import { createEmptyNode, modifyHtmlStructure, promoteSvgHtmlLabels, sanitizeHtmlCssForJuice, solveWeChatImage, stripFontFamilyForJuiceFallback, stripInvalidCssForJuice } from './clipboard-dom'
+import { createEmptyNode, modifyHtmlStructure, preserveAnchorStyles, promoteSvgHtmlLabels, sanitizeHtmlCssForJuice, solveWeChatImage, stripFontFamilyForJuiceFallback, stripInvalidCssForJuice } from './clipboard-dom'
 import { getStylesToAdd } from './share-styles'
 import { resolvePictureImages } from './wechat-picture'
 import { prepareDiagramSvgsForWeChat, prepareMathFormulasForWeChat, sanitizeSvgsForWeChat } from './wechat-svg'
@@ -85,6 +85,8 @@ export async function processClipboardContent(primaryColor: string) {
     clipboardDiv.innerHTML = modifyHtmlStructure(await mergeCss(clipboardDiv.innerHTML))
 
     clipboardDiv.querySelectorAll(`a[href^="#"]`).forEach(a => a.removeAttribute(`href`))
+    // WeChat drops the anchor of an outbound link on save, taking its inlined style along.
+    preserveAnchorStyles(clipboardDiv)
 
     clipboardDiv.innerHTML = clipboardDiv.innerHTML
       .replace(/([^-])top:(.*?)em/g, `$1transform: translateY($2em)`)

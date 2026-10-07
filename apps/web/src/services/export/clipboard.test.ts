@@ -1,6 +1,52 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { modifyHtmlStructure, promoteSvgHtmlLabels, sanitizeHtmlCssForJuice, solveWeChatImage, stripInvalidCssForJuice } from './clipboard-dom'
+import { modifyHtmlStructure, preserveAnchorStyles, promoteSvgHtmlLabels, sanitizeHtmlCssForJuice, solveWeChatImage, stripInvalidCssForJuice } from './clipboard-dom'
+
+/** What WeChat's editor leaves behind for an outbound link: the text, no anchor. */
+function stripAnchors(root: ParentNode) {
+  root.querySelectorAll(`a`).forEach(anchor => anchor.replaceWith(...Array.from(anchor.childNodes)))
+}
+
+describe(`preserveAnchorStyles`, () => {
+  const linkHtml = `<p>see <a href="https://lenciel.com/x" title="blog" target="_blank" rel="noopener" style="color: #d0648a; font-weight: bold; text-decoration: none;">blog</a> here</p>`
+
+  it(`keeps the link look after WeChat strips the anchor`, () => {
+    const root = document.createElement(`div`)
+    root.innerHTML = linkHtml
+
+    preserveAnchorStyles(root)
+    stripAnchors(root)
+
+    const span = root.querySelector(`p > span`)!
+    expect(span.textContent).toBe(`blog`)
+    expect(span.getAttribute(`style`)).toContain(`color: #d0648a`)
+    expect(span.getAttribute(`style`)).toContain(`font-weight: bold`)
+    // The paragraph text around the link is untouched.
+    expect(root.textContent).toBe(`see blog here`)
+  })
+
+  it(`keeps the anchor's own style and leaves unstyled anchors alone`, () => {
+    const root = document.createElement(`div`)
+    root.innerHTML = `${linkHtml}<p><a href="https://example.com">plain</a></p>`
+
+    preserveAnchorStyles(root)
+
+    const anchor = root.querySelector(`a`)!
+    expect(anchor.getAttribute(`style`)).toContain(`color: #d0648a`)
+    expect(anchor.querySelector(`span`)?.textContent).toBe(`blog`)
+    expect(root.querySelectorAll(`p`)[1].querySelector(`span`)).toBeNull()
+  })
+
+  it(`leaves SVG anchors alone so mermaid diagrams stay intact`, () => {
+    const root = document.createElement(`div`)
+    root.innerHTML = `<svg><a href="https://example.com" style="color: red"><text>node</text></a></svg>`
+
+    preserveAnchorStyles(root)
+
+    expect(root.querySelector(`svg a span`)).toBeNull()
+    expect(root.querySelector(`svg a`)?.textContent).toBe(`node`)
+  })
+})
 
 describe(`modifyHtmlStructure`, () => {
   it(`moves nested lists out of their parent li`, () => {

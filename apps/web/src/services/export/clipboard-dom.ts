@@ -159,6 +159,36 @@ export function solveWeChatImage(container?: HTMLElement) {
   })
 }
 
+/**
+ * WeChat keeps the text of an outbound link but drops the `<a>` when the draft is saved, and
+ * the colour / weight / shadow juice inlined on that anchor goes away with it. A span around
+ * the anchor's content carries the same inline style and survives the strip, so the link keeps
+ * its look — it was never clickable in WeChat anyway.
+ *
+ * The anchor keeps its own style as well: for links WeChat does allow (another 公众号 article)
+ * the span only repeats what the anchor declares, while `text-decoration` has to stay on the
+ * anchor or WeChat's own link underline can no longer be suppressed.
+ */
+export function preserveAnchorStyles(root: ParentNode) {
+  root.querySelectorAll(`a[style]`).forEach((anchor) => {
+    // SVG anchors (mermaid clickable nodes) take SVG children; an HTML span inside one
+    // would break the diagram.
+    if (anchor.closest(`svg`))
+      return
+
+    const style = anchor.getAttribute(`style`)
+    if (!style)
+      return
+
+    const span = document.createElement(`span`)
+    span.setAttribute(`style`, style)
+    while (anchor.firstChild) {
+      span.appendChild(anchor.firstChild)
+    }
+    anchor.appendChild(span)
+  })
+}
+
 export function modifyHtmlStructure(htmlString: string): string {
   const tempDiv = document.createElement(`div`)
   tempDiv.innerHTML = htmlString
