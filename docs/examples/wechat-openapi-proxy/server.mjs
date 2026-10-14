@@ -72,20 +72,34 @@ function sendJson(response, status, payload) {
   response.end(body)
 }
 
+/**
+ * 读请求体。超过 MAX_BODY 立即停止缓冲并 reject，但仍把剩余数据排空：直接断开连接会让客户端
+ * 先撞到连接重置、读不到这条 413（正常场景就是一张超限图片）。排空量超过 4× 上限（恶意流）才断开。
+ */
 function readBody(request) {
   return new Promise((resolve, reject) => {
     const chunks = []
     let size = 0
+    let draining = false
     request.on(`data`, (chunk) => {
       size += chunk.length
+      if (draining) {
+        if (size > MAX_BODY * 4)
+          request.destroy()
+        return
+      }
       if (size > MAX_BODY) {
+        draining = true
+        chunks.length = 0
         reject(Object.assign(new Error(`body too large`), { status: 413 }))
-        request.destroy()
         return
       }
       chunks.push(chunk)
     })
-    request.on(`end`, () => resolve(Buffer.concat(chunks)))
+    request.on(`end`, () => {
+      if (!draining)
+        resolve(Buffer.concat(chunks))
+    })
     request.on(`error`, reject)
   })
 }

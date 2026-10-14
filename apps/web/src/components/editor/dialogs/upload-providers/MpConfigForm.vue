@@ -10,33 +10,31 @@ import { useUploadProviderConfig } from './useUploadProviderConfig'
 const { t } = useI18n()
 const isWebsite = window.location.protocol.startsWith(`http`)
 const isCfWorkers = import.meta.env.CF_WORKERS === `1`
-// The studio reverse-proxies /cgi-bin on its own origin, so no proxy domain is needed locally.
-const isProxyRequired = computed(() => isWebsite && !isCfWorkers && !window.__MD_STUDIO__)
-const schema = computed(() => toTypedSchema(z.object({
-  proxyOrigin: isProxyRequired.value
-    ? requiredString(t(`upload.validation.proxyRequired`))
-    : optionalString(),
+/** The field is optional everywhere (the studio and the CF build proxy /cgi-bin on their own
+ *  origin), so nothing is validated — the hint under it explains the one deployment where it
+ *  is genuinely needed: a plain web page, which has no same-origin proxy and no CORS to call
+ *  WeChat with. */
+const schema = toTypedSchema(z.object({
+  proxyOrigin: optionalString(),
   appID: requiredString(t(`upload.validation.appIdRequired`)),
   appsecret: requiredString(t(`upload.validation.appSecretRequired`)),
-})))
+}))
 const { config, saveConfig } = useUploadProviderConfig(`mpConfig`, {
   proxyOrigin: ``,
   appID: ``,
   appsecret: ``,
   replaceDraft: true,
 })
-// A proxy saved earlier keeps its field (and stays clearable) even where it is no longer required.
-const showProxyField = computed(() => isProxyRequired.value || Boolean(config.value.proxyOrigin))
+const ownProxyNeeded = isWebsite && !isCfWorkers && !window.__MD_STUDIO__
 </script>
 
 <template>
   <UploadProviderForm :validation-schema="schema" :initial-values="config" @submit="saveConfig">
     <UploadProviderTextField
-      v-if="showProxyField"
       name="proxyOrigin"
       :label="t('upload.labels.proxyDomain')"
       :placeholder="t('upload.placeholders.proxyExample')"
-      :required="isProxyRequired"
+      :hint="ownProxyNeeded ? t('upload.help.proxyHint') : ''"
     />
     <UploadProviderTextField name="appID" label="appID" :placeholder="t('upload.placeholders.appId')" required />
     <UploadProviderTextField name="appsecret" label="appsecret" :placeholder="t('upload.placeholders.appSecret')" required />
