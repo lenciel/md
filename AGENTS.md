@@ -26,7 +26,7 @@
 | `@md/api`        | `apps/api`            | 后端 API：账户、云同步、计费、上传代理、分享、主题/组件市场、表情包（Cloudflare Workers + Hono + D1） |
 | `@md/studio`     | `apps/studio`         | 本地博客工作目录服务（Express，托管 studio 构建产物，浏览/编辑 `_posts` 并执行 rake/rsync 命令）      |
 
-独立示例（不在 workspace 内）：`docs/examples/wechat-openapi-worker/` — 微信公众号 OpenAPI 代理 Worker。
+独立示例（不在 workspace 内）：`docs/examples/wechat-openapi-worker/` — 微信公众号 OpenAPI 代理 Worker；`docs/examples/wechat-openapi-proxy/` — 固定出口 IP 的零依赖 Node 代理（IP 白名单只配一次）。
 
 ## 常用命令
 

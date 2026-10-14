@@ -44,7 +44,8 @@ This repository is a pnpm monorepo for **doocs/md**, a WeChat Markdown editor. C
 - **`packages/config`**: Shared TypeScript config.
 - **`packages/md-cli`**: Published npm CLI that serves the built web app.
 - **`packages/mcp-server`**: MCP tools (`render_markdown`, `list_themes`, `list_colors`).
-- **`docs/examples/wechat-openapi-worker/`**: standalone WeChat OpenAPI proxy (not in the pnpm workspace).
+- **`docs/examples/wechat-openapi-worker/`**: standalone WeChat OpenAPI proxy (CF Worker; not in the pnpm workspace).
+- **`docs/examples/wechat-openapi-proxy/`**: standalone zero-dependency Node proxy for a fixed egress IP, so the MP IP whitelist is configured once.
 
 Details: [docs/architecture.md](../docs/architecture.md).
 

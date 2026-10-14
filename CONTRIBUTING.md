@@ -41,7 +41,7 @@
 | `@doocs/md-cli`  | `packages/md-cli`     | CLI（托管构建产物）                                  |
 | `@md/mcp-server` | `packages/mcp-server` | MCP 服务                                             |
 
-独立示例（不在 pnpm workspace 内）：`docs/examples/wechat-openapi-worker/`。
+独立示例（不在 pnpm workspace 内）：`docs/examples/wechat-openapi-worker/`（Cloudflare Worker 转发）、`docs/examples/wechat-openapi-proxy/`（固定出口 IP 的零依赖 Node 代理，公众号 IP 白名单只配一次）。
 
 以开发 `@md/web` 为例：
 
