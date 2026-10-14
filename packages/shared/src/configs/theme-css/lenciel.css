@@ -96,9 +96,11 @@ p {
 }
 
 /* ==================== Blockquote ==================== */
-/* The blog grey is fixed rather than mode-aware: the quote text below is the
-   blog's #666, which would be illegible on the app's dark-mode equivalent.
-   Picking a quote background in the style menu still overrides it. */
+/* The blog grey is the box's own #f2f2f2, and the quote text is the blog's #666: a light
+   box stays legible whatever the page behind it does. Picking a quote background in the
+   style menu still overrides it — including 无背景, where the box sits on the page and the
+   inset hairline has to shade that instead of painting #c2c2c2, which is why the edge is 20%
+   black (20% of #f2f2f2 is the blog's #c2c2c2) rather than the blog's opaque grey. */
 blockquote {
   padding: 15px;
   margin: 0 0 calc(1.5em * var(--md-block-spacing));
@@ -106,7 +108,8 @@ blockquote {
   border-radius: 3px;
   color: #666;
   background: var(--md-blockquote-background, #f2f2f2);
-  box-shadow: #c2c2c2 0 1px 1px inset;
+  /* The blog blurs this edge over 5px; a 1px blur reads as a hard hairline instead. */
+  box-shadow: rgba(0, 0, 0, 0.2) 0 1px 5px inset;
   font-style: normal;
 }
 
