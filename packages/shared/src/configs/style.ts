@@ -1,7 +1,9 @@
 import type { IConfigOption } from '../types'
 import type { ThemeName } from './theme-css'
 import { themeOptions } from './theme'
-import { themeStyleDefaults } from './theme-defaults'
+import { lockedStyleKeys, themeLockedSettings } from './theme-defaults'
+
+export { lockedStyleKeys }
 
 export const fontFamilyOptions: IConfigOption[] = [
   {
@@ -401,9 +403,8 @@ export interface PerThemeSettings {
 }
 
 /**
- * Defaults for one theme's settings; a ported theme overrides the shared values
- * where its original stylesheet dictates a different base size (see
- * `theme-defaults.ts`).
+ * Defaults for one theme's settings; a theme that owns its own typography/colours overrides
+ * the shared values with the ones its original stylesheet used (see `theme-defaults.ts`).
  */
 export function defaultPerThemeSettings(theme: ThemeName = defaultStyleConfig.theme): PerThemeSettings {
   return {
@@ -418,8 +419,29 @@ export function defaultPerThemeSettings(theme: ThemeName = defaultStyleConfig.th
     headingStyles: { ...defaultStyleConfig.headingStyles },
     isShowLineNumber: defaultStyleConfig.isShowLineNumber,
     isMacCodeBlock: defaultStyleConfig.isMacCodeBlock,
-    ...(themeStyleDefaults[theme] ?? {}),
+    ...(themeLockedSettings[theme] ?? {}),
   }
 }
 
 export type PerThemeSettingsMap = Partial<Record<ThemeName, PerThemeSettings>>
+
+/**
+ * Settings for one theme, with the theme's own keys resolved.
+ *
+ * A theme that owns its typography and colours (`themeLockedSettings`) wins those keys
+ * outright: values stored by an older version are dropped, so an article rendered last month
+ * looks the same as one rendered today and the studio preview, the pasted article and the
+ * original stylesheet stay in agreement. Keys the theme does not own (code theme, mac chrome,
+ * line numbers) still follow whatever the user stored.
+ */
+export function resolvePerThemeSettings(theme: ThemeName, stored?: PerThemeSettings): PerThemeSettings {
+  const defaults = defaultPerThemeSettings(theme)
+  if (!stored)
+    return defaults
+
+  const locked = lockedStyleKeys(theme)
+  const usable = Object.fromEntries(
+    Object.entries(stored).filter(([key]) => !locked.has(key)),
+  ) as Partial<PerThemeSettings>
+  return { ...defaults, ...usable }
+}

@@ -93,6 +93,10 @@
 
 @layer base {
   :root {
+    /* Drives `light-dark()` in the article themes (the lenciel palette resolves its page ink and
+       a few chip/table inks per scheme). Without it the preview's dark mode keeps light values. */
+    color-scheme: light;
+
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
 
@@ -126,6 +130,8 @@
   }
 
   .dark {
+    color-scheme: dark;
+
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
 

@@ -7,7 +7,7 @@ import { initRenderer } from '@md/core/renderer'
 import { processCSS } from '@md/core/theme/cssProcessor'
 import { generateCSSVariables, generateHeadingStyles } from '@md/core/theme/cssVariables'
 import { postProcessHtml, renderMarkdown } from '@md/core/utils'
-import { themeStyleDefaults } from '@md/shared/configs/theme-defaults'
+import { themeLockedSettings } from '@md/shared/configs/theme-defaults'
 import {
   assertAllowedCodeBlockThemeUrl,
   defaultRenderOptions,
@@ -109,19 +109,19 @@ function normalizeHeadingStyles(input?: HeadingStylesInput): HeadingStyles | und
 
 export async function buildRenderedOutput(input: RenderMarkdownInput) {
   const theme = input.theme ?? defaultRenderOptions.theme
-  // Ported themes only read like their original at the base size the original
-  // used, so an omitted size falls back to the theme's own default first.
-  const themeDefaults = themeStyleDefaults[theme] ?? {}
-  const primaryColor = input.primaryColor ?? defaultRenderOptions.primaryColor
-  const fontFamily = input.fontFamily ?? defaultRenderOptions.fontFamily
+  // Themes that own their typography/colours (`themeLockedSettings`) supply every one of
+  // these; an explicit request field still wins, so the MCP render matches the app by default.
+  const themeDefaults = themeLockedSettings[theme] ?? {}
+  const primaryColor = input.primaryColor ?? themeDefaults.primaryColor ?? defaultRenderOptions.primaryColor
+  const fontFamily = input.fontFamily ?? themeDefaults.fontFamily ?? defaultRenderOptions.fontFamily
   const fontSize = input.fontSize ?? themeDefaults.fontSize ?? defaultRenderOptions.fontSize
   const lineHeight = input.lineHeight ?? themeDefaults.lineHeight ?? defaultRenderOptions.lineHeight
-  const blockSpacing = input.blockSpacing ?? defaultRenderOptions.blockSpacing
-  const linkColor = input.linkColor ?? defaultRenderOptions.linkColor
-  const blockquoteBackground = input.blockquoteBackground ?? defaultRenderOptions.blockquoteBackground
+  const blockSpacing = input.blockSpacing ?? themeDefaults.blockSpacing ?? defaultRenderOptions.blockSpacing
+  const linkColor = input.linkColor ?? themeDefaults.linkColor ?? defaultRenderOptions.linkColor
+  const blockquoteBackground = input.blockquoteBackground ?? themeDefaults.blockquoteBackground ?? defaultRenderOptions.blockquoteBackground
   const legend = input.legend ?? defaultRenderOptions.legend
   const codeBlockTheme = input.codeBlockTheme ?? defaultRenderOptions.codeBlockTheme
-  const headingStyles = normalizeHeadingStyles(input.headingStyles)
+  const headingStyles = normalizeHeadingStyles(input.headingStyles ?? themeDefaults.headingStyles)
 
   const renderer = initRenderer({
     isMacCodeBlock: input.isMacCodeBlock ?? defaultRenderOptions.isMacCodeBlock,

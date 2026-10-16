@@ -1,6 +1,6 @@
 import type { HeadingLevel, HeadingStyles, HeadingStyleType, PerThemeSettings, PerThemeSettingsMap, ThemeName } from '@md/shared/configs'
 import { applyTheme } from '@md/core/theme'
-import { defaultPerThemeSettings, defaultStyleConfig, widthOptions } from '@md/shared/configs'
+import { defaultPerThemeSettings, defaultStyleConfig, lockedStyleKeys, resolvePerThemeSettings, widthOptions } from '@md/shared/configs'
 import { isMarketplaceThemeKey } from '@md/shared/types'
 import { store } from '@/storage'
 import { addPrefix } from '@/storage/prefix'
@@ -21,14 +21,12 @@ export const useThemeStore = defineStore(`theme`, () => {
     {},
   )
 
-  // Stored settings win over the theme's defaults, but are merged on top of them:
-  // entries written by older versions can be missing fields, and the defaults are
-  // per-theme (see defaultPerThemeSettings).
-  const currentSettings = computed<PerThemeSettings>(() => {
-    const defaults = defaultPerThemeSettings(theme.value)
-    const stored = themeSettings.value[theme.value]
-    return stored ? { ...defaults, ...stored } : defaults
-  })
+  // Stored settings win over the theme's defaults, but are merged on top of them: entries
+  // written by older versions can be missing fields, the defaults are per-theme, and keys a
+  // ported theme owns itself are dropped from the stored side (see resolvePerThemeSettings).
+  const currentSettings = computed<PerThemeSettings>(() =>
+    resolvePerThemeSettings(theme.value, themeSettings.value[theme.value]),
+  )
 
   const primaryColor = computed<string>({
     get: () => currentSettings.value.primaryColor,
@@ -87,6 +85,11 @@ export const useThemeStore = defineStore(`theme`, () => {
 
   function setThemeField<K extends keyof PerThemeSettings>(key: K, value: PerThemeSettings[K]) {
     const t = theme.value
+    // The theme's own stylesheet decides these (see theme-defaults.ts); the UI hides the
+    // matching menus, this keeps other callers (slash commands, shortcuts) from drifting.
+    if (lockedStyleKeys(t).has(key as string))
+      return
+
     const existing = themeSettings.value[t] ?? defaultPerThemeSettings(t)
     themeSettings.value = {
       ...themeSettings.value,

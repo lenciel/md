@@ -4,11 +4,15 @@
  */
 
 /* ==================== Container ==================== */
+/* `letter-spacing: normal` matters outside the app: WeChat's article page injects
+   `letter-spacing: 0.544px` on its own content elements, which descendants inherit unless
+   the article says otherwise. The blog sets no tracking anywhere at all. */
 section,
 #output .container {
   font-family: var(--md-font-family);
   font-size: var(--md-font-size);
   line-height: var(--md-line-height);
+  letter-spacing: normal;
   text-align: left;
 }
 
@@ -16,6 +20,7 @@ section,
   font-family: var(--md-font-family);
   font-size: var(--md-font-size);
   line-height: var(--md-line-height);
+  letter-spacing: normal;
   text-align: left;
 }
 

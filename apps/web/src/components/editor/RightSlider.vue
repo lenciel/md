@@ -6,6 +6,7 @@ import type {
 } from '@md/shared/configs'
 import type { Format } from 'vue-pick-colors'
 import { X } from '@lucide/vue'
+import { lockedStyleKeys } from '@md/shared/configs'
 import PickColors from 'vue-pick-colors'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -40,6 +41,9 @@ const {
   isUseJustify,
   isCountStatus,
 } = storeToRefs(themeStore)
+
+/** Per-theme settings this theme's own stylesheet decides — their groups are hidden. */
+const lockedKeys = computed(() => lockedStyleKeys(theme.value))
 
 const { scheduleEditorRefresh, editorRefresh } = useEditorRefresh()
 
@@ -318,7 +322,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           {{ t('marketplace.exploreThemes') }}
         </Button>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('fontFamily')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.font') }}
         </h2>
@@ -331,7 +335,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('fontSize')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.fontSize') }}
         </h2>
@@ -345,7 +349,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('lineHeight')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.lineHeight') }}
         </h2>
@@ -359,7 +363,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('blockSpacing')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.blockSpacing') }}
         </h2>
@@ -373,7 +377,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('linkColor')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.linkColor') }}
         </h2>
@@ -387,7 +391,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('blockquoteBackground')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.blockquoteBackground') }}
         </h2>
@@ -401,7 +405,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('primaryColor')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.primaryColor') }}
         </h2>
@@ -434,7 +438,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('primaryColor')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.customPrimaryColor') }}
         </h2>
@@ -446,7 +450,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           />
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('headingStyles')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('rightSlider.headingStyle') }}
         </h2>
@@ -475,7 +479,7 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Select>
         </div>
       </div>
-      <div class="space-y-2">
+      <div v-if="!lockedKeys.has('codeBlockTheme')" class="space-y-2">
         <h2 class="text-sm font-medium">
           {{ t('menu.codeBlockTheme') }}
         </h2>
@@ -504,11 +508,11 @@ const isThemeCompact = computed(() => themeGridWidth.value > 0 && themeGridWidth
           </Button>
         </div>
       </div>
-      <div class="flex items-center justify-between gap-3">
+      <div v-if="!lockedKeys.has('isMacCodeBlock')" class="flex items-center justify-between gap-3">
         <Label for="mac-code-block" class="min-w-0 shrink text-xs leading-snug sm:text-sm">{{ t('menu.macCodeBlock') }}</Label>
         <Switch id="mac-code-block" class="shrink-0" :model-value="isMacCodeBlock" @update:model-value="setMacCodeBlock" />
       </div>
-      <div class="flex items-center justify-between gap-3">
+      <div v-if="!lockedKeys.has('isShowLineNumber')" class="flex items-center justify-between gap-3">
         <Label for="show-line-number" class="min-w-0 shrink text-xs leading-snug sm:text-sm">{{ t('rightSlider.codeBlockLineNumber') }}</Label>
         <Switch id="show-line-number" class="shrink-0" :model-value="isShowLineNumber" @update:model-value="setShowLineNumber" />
       </div>

@@ -6,6 +6,7 @@ import type { Format } from 'vue-pick-colors'
 import { ALargeSmall, AlignVerticalSpaceAround, Code, Droplet, FileCode, ImageIcon, Link, Palette, Pipette, Quote, RotateCcw, Rows3, SquareCode, Store, Type } from '@lucide/vue'
 import {
   codeBlockThemeOptions,
+  lockedStyleKeys,
 } from '@md/shared/configs'
 import PickColors from 'vue-pick-colors'
 import { useEditorRefresh } from '@/composables/useEditorRefresh'
@@ -49,6 +50,9 @@ const {
 } = storeToRefs(themeStore)
 
 const { isDark } = storeToRefs(uiStore)
+
+/** Per-theme settings this theme's own stylesheet decides — their menus are hidden. */
+const lockedKeys = computed(() => lockedStyleKeys(theme.value))
 
 function themeChanged(newTheme: ThemeName) {
   themeStore.theme = newTheme
@@ -230,6 +234,7 @@ const formatOptions = ref<Format[]>([`rgb`, `hex`, `hsl`, `hsv`])
       />
       <StyleOptionMenu
         :title="t('menu.codeBlockTheme')"
+        style-key="codeBlockTheme"
         :options="codeBlockThemeOptions"
         :current="codeBlockTheme"
         :change="codeBlockThemeChanged"
@@ -243,7 +248,7 @@ const formatOptions = ref<Format[]>([`rgb`, `hex`, `hsl`, `hsv`])
         :icon="ImageIcon"
       />
       <MenubarSeparator />
-      <MenubarCheckboxItem class="pl-2" @click.self.prevent="showPicker">
+      <MenubarCheckboxItem v-if="!lockedKeys.has('primaryColor')" class="pl-2" @click.self.prevent="showPicker">
         <HoverCard :open-delay="100">
           <HoverCardTrigger class="w-full flex">
             <Pipette class="mr-2 h-4 w-4" />
@@ -268,7 +273,7 @@ const formatOptions = ref<Format[]>([`rgb`, `hex`, `hsl`, `hsv`])
         {{ t('menu.customCss') }}
       </MenubarCheckboxItem>
       <MenubarSeparator />
-      <MenubarCheckboxItem class="pl-2" @click="macCodeBlockChanged">
+      <MenubarCheckboxItem v-if="!lockedKeys.has('isMacCodeBlock')" class="pl-2" @click="macCodeBlockChanged">
         <SquareCode class="mr-2 h-4 w-4" />
         {{ t('menu.macCodeBlock') }}
       </MenubarCheckboxItem>
@@ -355,6 +360,7 @@ const formatOptions = ref<Format[]>([`rgb`, `hex`, `hsl`, `hsv`])
       />
       <StyleOptionMenu
         :title="t('menu.codeBlockTheme')"
+        style-key="codeBlockTheme"
         :options="codeBlockThemeOptions"
         :current="codeBlockTheme"
         :change="codeBlockThemeChanged"
@@ -368,7 +374,7 @@ const formatOptions = ref<Format[]>([`rgb`, `hex`, `hsl`, `hsv`])
         :icon="ImageIcon"
       />
       <MenubarSeparator />
-      <MenubarCheckboxItem class="pl-2" @click.self.prevent="showPicker">
+      <MenubarCheckboxItem v-if="!lockedKeys.has('primaryColor')" class="pl-2" @click.self.prevent="showPicker">
         <HoverCard :open-delay="100">
           <HoverCardTrigger class="w-full flex">
             <Pipette class="mr-2 h-4 w-4" />
@@ -393,7 +399,7 @@ const formatOptions = ref<Format[]>([`rgb`, `hex`, `hsl`, `hsv`])
         {{ t('menu.customCss') }}
       </MenubarCheckboxItem>
       <MenubarSeparator />
-      <MenubarCheckboxItem class="pl-2" @click="macCodeBlockChanged">
+      <MenubarCheckboxItem v-if="!lockedKeys.has('isMacCodeBlock')" class="pl-2" @click="macCodeBlockChanged">
         <SquareCode class="mr-2 h-4 w-4" />
         {{ t('menu.macCodeBlock') }}
       </MenubarCheckboxItem>

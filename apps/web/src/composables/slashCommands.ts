@@ -1,5 +1,6 @@
 import type { EditorView as EditorViewType } from '@codemirror/view'
 import type { ThemeName } from '@md/shared/configs'
+import { lockedStyleKeys } from '@md/shared/configs'
 import {
   formatBold,
   formatCode,
@@ -301,6 +302,9 @@ export function buildSlashCommands(): SlashCommandItem[] {
   const styleCommands: SlashCommandItem[] = (() => {
     const installed = useMarketplaceStore().getInstalledThemeOptions()
     const { themeOptions: localizedThemes, colorOptions: localizedColors } = createLocalizedStyleOptions(t, installed)
+    // A theme that owns its colours (see theme-defaults.ts) hides the colour commands; the
+    // store ignores the write anyway, this keeps the palette honest.
+    const colors = lockedStyleKeys(themeStore.theme).has(`primaryColor`) ? [] : localizedColors
     return [
       ...localizedThemes.map(option => createCommand({
         id: `theme-${option.value}`,
@@ -313,7 +317,7 @@ export function buildSlashCommands(): SlashCommandItem[] {
           view.focus()
         },
       })),
-      ...localizedColors.map(option => createCommand({
+      ...colors.map(option => createCommand({
         id: `color-${option.value.replace('#', '')}`,
         label: t(`slash.colorLabel`, { name: option.label }),
         group: `style`,
