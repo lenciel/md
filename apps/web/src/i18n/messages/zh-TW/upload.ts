@@ -142,6 +142,7 @@ export default {
       notFound: `檔案不存在`,
       convertFailed: `圖片格式轉換失敗`,
       failed: `以下圖片無法上傳到公眾號，已中止：{items}`,
+      studioRequired: `文章裡有 Jekyll picture 標籤產生的圖片，只能在 studio 裡發佈（一般網頁讀不到部落格目錄裡的檔案）`,
     },
     provider: {
       accessTokenFailed: `獲取 access_token 失敗`,

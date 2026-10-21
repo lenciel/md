@@ -11,6 +11,10 @@ export interface MermaidToken extends TextToken {
   type: 'mermaid'
 }
 
+export interface PeleToken extends TextToken {
+  type: 'pele'
+}
+
 export interface InfographicToken extends TextToken {
   type: 'infographic'
 }

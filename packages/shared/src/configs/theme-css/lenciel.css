@@ -6,18 +6,18 @@
  * `theme-defaults.ts` locks the matching style-menu settings (font, size, line height,
  * block spacing, colours, heading presets) so nothing can drift from the original.
  * Palette rule: the article must survive a background it does not control — WeChat's reader
- * repaints the page on phones in night mode, and the editor ships a dark preview — so nothing
- * here is allowed to assume a white page. Every colour is one of
- *   * the blog's literal (links, the chip's border, solarized code, `hr`): mid-tone enough to
- *     read on either background;
- *   * a translucent tint (`rgba(…)` for a brand hue, `color-mix(in srgb, currentColor N%,
- *     transparent)` for a neutral surface or a grey decoration): composited over white it is
- *     the blog's own value, and over a dark page the host's light ink keeps it visible instead
- *     of painting light grey on black;
- *   * `light-dark()` — used only for ink that sits on a page or on a surface we tint ourselves,
- *     because dark ink and light ink are the one pair that genuinely cannot be the same value.
- *     The plain declaration before it is the fallback older renderers keep: the blog's own
- *     value, which is what WeChat's reader needs (its night mode repaints what it is given).
+ * repaints the page on phones in night mode, and the editor ships a dark preview — so every
+ * decoration is written as `light-dark(blog value, night value)`:
+ *   * day is the blog's own value, verbatim — shadow greys (`#efefef` / `#828887` / `#ccc`), the
+ *     `hr` grey, the blue chip, the table banding, the quote box — so the preview matches
+ *     lenciel.com pixel for pixel;
+ *   * night is one faint warm hairline shared by the whole theme, `rgba(176, 161, 161, 0.16)`,
+ *     which reads as a soft edge instead of a grey glow on a near-black page;
+ *   * text ink cannot be a single value (`#222` is unreadable at night, `#e6e6e6` is unreadable
+ *     by day), so it resolves per scheme, and muted inks ride along with it;
+ *   * the first argument is what a renderer without `light-dark()` keeps: the blog's own value,
+ *     which is exactly what WeChat's older webview needs (its night mode repaints what it is
+ *     given).
  *
  * Sizes are the blog's own formulas **evaluated at a 400px viewport** (what a phone sees) and
  * then frozen as constants:
@@ -34,9 +34,8 @@
 
 /* ==================== Headings ==================== */
 /* The blog's heading sizes at the 400px reference (see the file header), fluid in the original,
-   frozen here so the preview and the pasted article agree. The double drop-shadow is spelled as
-   translucent black: 6% / 48% of a white page is the blog's #efefef / #828887, and the same
-   percentages over a dark page stay near its background instead of painting grey on black.
+   frozen here so the preview and the pasted article agree. The double drop-shadow is the blog's
+   own pair (#efefef / #828887) by day and the faint warm hairline at night.
 
    No top margin: the blog's `h1..h6` carry only `margin-bottom: .6em` and let the preceding
    block's 1.5em bottom margin open the gap. */
@@ -49,25 +48,25 @@ h1 {
   font-weight: bold;
   line-height: 1.2;
   text-align: left;
-  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
+  text-shadow: 1px 1px light-dark(#efefef, rgba(176, 161, 161, 0.28)),
+    2px 2px light-dark(#828887, rgba(176, 161, 161, 0.1));
 }
 
-/* Blog: `article h2 { padding-top: .8em; border-top: 2px dashed #828887 }` — the rule is the
-   blog's grey as a tint of the page ink: 57% over white is that #828887, and over a dark page it
-   is the same mid grey rather than a black line that disappears into the background. */
+/* Blog: `article h2 { padding-top: .8em; border-top: 2px dashed #828887 }` — the blog's grey by
+   day, the faint warm hairline at night. */
 h2 {
   display: block;
   padding: 0.8em 0 0;
   margin: 0 8px 0.5em;
-  border-top: 2px dashed rgba(0, 0, 0, 0.48);
-  border-top: 2px dashed color-mix(in srgb, currentColor 57%, transparent);
+  border-top: 2px dashed light-dark(#828887, rgba(176, 161, 161, 0.16));
   border-radius: 0;
   background: none;
   font-size: 26.176px;
   font-weight: bold;
   line-height: 1.35;
   text-align: left;
-  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
+  text-shadow: 1px 1px light-dark(#efefef, rgba(176, 161, 161, 0.28)),
+    2px 2px light-dark(#828887, rgba(176, 161, 161, 0.1));
 }
 
 h3 {
@@ -77,7 +76,8 @@ h3 {
   font-size: 23.7964px;
   font-weight: bold;
   line-height: 1.35;
-  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
+  text-shadow: 1px 1px light-dark(#efefef, rgba(176, 161, 161, 0.28)),
+    2px 2px light-dark(#828887, rgba(176, 161, 161, 0.1));
 }
 
 h4,
@@ -86,7 +86,8 @@ h6 {
   margin: 0 8px 0.6em;
   font-weight: bold;
   line-height: 1.35;
-  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.48);
+  text-shadow: 1px 1px light-dark(#efefef, rgba(176, 161, 161, 0.28)),
+    2px 2px light-dark(#828887, rgba(176, 161, 161, 0.1));
 }
 
 h4 {
@@ -138,39 +139,28 @@ p {
 }
 
 /* ==================== Blockquote ==================== */
-/* The panel and its ink are both tints of the page ink, so the blog's "muted grey box" reads
-   the same on a light page (6% and 66% of #222 over white are the blog's #f2f2f2 and #666) and
-   turns into a lighter panel with muted light ink on a dark one — instead of a light card
-   glowing on a near-black page. The inset hairline is the same tint at 20%, which over the
-   panel is the blog's #c2c2c2. */
+/* The blog's own values by day — `background: #f2f2f2`, `color: #666`, the inset
+   `rgba(0,0,0,.2)` hairline — and the faint warm tint and shadow at night, where a light card
+   would glow on a near-black page. */
 blockquote {
   padding: 15px;
   margin: 0 0 1.5em;
   border-left: none;
   border-radius: 3px;
-  /* The box carries the page ink itself (the shared stylesheet tints its own `blockquote` with
-     the shell's `--foreground`, which is a shade darker than the blog's #222); the panel and the
-     hairline are then tints of it, so `currentColor` is the article ink and not a muted copy of
-     itself — a muted copy would multiply the two alphas and wash the panel out. */
-  color: #222;
-  color: light-dark(#222, #e6e6e6);
-  background: rgba(0, 0, 0, 0.05);
-  background: color-mix(in srgb, currentColor 6%, transparent);
+  color: light-dark(#666, #e6e6e6);
+  background: light-dark(#f2f2f2, rgba(176, 161, 161, 0.16));
   /* Blog: `article blockquote { line-height: 1.618em }` — the quote block does not follow
      the page's line-height. */
   line-height: 1.618em;
   /* The blog blurs this edge over 5px; a 1px blur reads as a hard hairline instead. */
-  box-shadow: rgba(0, 0, 0, 0.2) 0 1px 5px inset;
-  box-shadow: color-mix(in srgb, currentColor 20%, transparent) 0 1px 5px inset;
+  box-shadow: light-dark(rgba(0, 0, 0, 0.2), rgba(176, 161, 161, 0.16)) 0 1px 5px inset;
   font-style: normal;
 }
 
-/* The quote keeps the blog's #666, here as 66% of the article ink over the panel above: muted
-   the same way in either scheme. Naming `p` again stops the page's ink rule from overriding it. */
+/* Naming `p` again stops the page's ink rule from overriding the quote's ink. */
 blockquote > p {
   margin: 0 0 1.5em;
   color: inherit;
-  color: color-mix(in srgb, currentColor 66%, transparent);
   font-size: 1em;
   letter-spacing: normal;
 }
@@ -181,48 +171,37 @@ blockquote > p:last-child {
 
 /* ==================== Inline code ==================== */
 /* Blog: `p code, li code { background: #B6DDEF; border: 1px dashed #0181EB; color: #555;
-   font-size: 90%; line-height: 1.5em; padding: 0 .3em; margin: -1px 0 }` — the blue chip is
-   the blog's own, not a tint of the theme colour.
-
-   The fill is that blue at 35%: over white it composites to exactly #b6ddef, and over a dark
-   page the host's ink keeps it a dark teal panel instead of a glaring light chip. The border is
-   the blog's blue, mid-tone enough to read on either background. Only the ink has to resolve per
-   scheme; `#555` in front of it is the blog's value, which is what WeChat's reader keeps (and
-   its night mode repaints). */
+   font-size: 90%; line-height: 1.5em; padding: 0 .3em; margin: -1px 0 }` — the blue chip is the
+   blog's own, so day uses its literals; night swaps fill and dashed border for the faint warm
+   tint so the chip cannot glare on a near-black page. */
 .codespan {
   display: inline-block;
   padding: 0 0.3em;
   margin: -1px 0;
-  border: 1px dashed #0181eb;
+  border: 1px dashed light-dark(#0181eb, rgba(176, 161, 161, 0.16));
   border-radius: 0.4em;
-  background: rgba(46, 158, 209, 0.35);
-  color: #555;
-  color: light-dark(#555, #b6ddef);
+  background: light-dark(#b6ddef, rgba(176, 161, 161, 0.16));
+  color: light-dark(#555, #e6e6e6);
   font-size: 90%;
   line-height: 1.5em;
   word-break: break-word;
 }
 
 /* ==================== Code blocks ==================== */
-/* Blog: `pre { background: #002b36; color: #93a1a1; border: 1px solid #05232b;
-   border-radius: .4em; line-height: 1.45em; font-size: 13px; margin-bottom: 2.1em;
-   padding: .8em 1em }`. The colours come from the locked solarized code theme; this rule
-   carries the box and the leading the blog asks for.
-
-   The panel is a fixed dark slate — correct on the blog's white page, and still correct on a
-   dark one, where it sits a shade off the page. The 1px translucent-white ring lifts it there;
-   on white the ring is white, i.e. invisible, which is what the blog has (its own border is
-   near-invisible against the panel). Tokens keep their solarized colours, which read on the
-   panel whatever is behind it. */
+/* Box from the 春日清新 marketplace theme (`spring-fresh` by yanglbme): a 14px radius, an
+   accent-tinted hairline and a soft drop shadow instead of the blog's navy border. Day keeps the
+   theme's accent hairline; night swaps both the hairline and the shadow for the faint warm tint.
+   The panel's own colours and the syntax colours still come from the locked solarized code theme;
+   size and leading stay the blog's. */
 pre.code__pre,
 .hljs.code__pre {
   margin: 0 8px 2.1em;
-  border: 1px solid #05232b;
-  border-radius: 0.4em;
+  border: 1px solid light-dark(rgba(208, 100, 138, 0.12), rgba(176, 161, 161, 0.16));
+  border-radius: 14px;
   color: #93a1a1;
   font-size: 13px;
   line-height: 1.45em;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  box-shadow: light-dark(rgba(0, 0, 0, 0.04), rgba(176, 161, 161, 0.16)) 0 6px 16px;
 }
 
 pre.code__pre > code,
@@ -234,16 +213,15 @@ pre.code__pre > code,
 
 /* ==================== Images ==================== */
 /* Blog: `article img { border: #fff 0.5em solid; border-radius: .3em; box-sizing: border-box;
-   box-shadow: rgba(0,0,0,0.15) 0 1px 4px }` — the pictures sit in a white frame, which is
-   invisible on the blog's white page. The frame is transparent here: same geometry, same
-   shadow box, but it cannot turn into a bright mat the moment the page behind it goes dark.
-   The shadow is translucent black, so it is the blog's engraved grey on white and no shadow
-   at all on a near-black page. */
+   box-shadow: rgba(0,0,0,0.15) 0 1px 4px }` — the pictures sit in a white mat, which is invisible
+   on the blog's white page, so day keeps the blog's look with a transparent border and the blog's
+   shadow (same pixels, same geometry). Night swaps both for the faint warm grey. */
 img {
   box-sizing: border-box;
   border: 0.5em solid transparent;
+  border-color: light-dark(transparent, rgb(176 161 161 / 16%));
   border-radius: 0.3em;
-  box-shadow: rgba(0, 0, 0, 0.15) 0 1px 4px;
+  box-shadow: light-dark(rgba(0, 0, 0, 0.15), rgba(176, 161, 161, 0.16)) 0 1px 4px;
 }
 
 /* The blog lays images out as plain blocks; the UA default of `1em 40px` would
@@ -280,28 +258,21 @@ li {
 /* Blog: `table { margin-bottom: 1.5em; width: 100% }`, `* + table` = 14.1818px at the 400px
    reference (16px at the desktop end), `th { background: #b9c9fe; border-top: 2px solid #d3ddff;
    color: #039 }` and `td { background: #e8edff; color: #669 }` with white separators.
-
-   The banded blues are the blog's own hues at a low alpha: 35% and 20% over white composite to
-   #b9c9fe and #e8edff exactly, and over a dark page they stay dark blue panels, so the table
-   still reads as a table rather than as a pair of light cards. The separators are that alpha
-   white, which over the cell's own tint is the blog's white gap on white and a soft light edge
-   on dark. Cell ink is the one pair that has to resolve per scheme; the bare hexes in front are
-   the blog's values, which renderers without `light-dark()` keep. */
+   Day uses those literals; night swaps the banding, the separators and the inks for the faint
+   warm grey, so the table reads as a table rather than as a pair of light cards. */
 table {
   margin: 0 8px 1.5em;
   font-size: 14.1818px;
-  color: #555;
   color: light-dark(#555, #e6e6e6);
 }
 
 th {
   padding: 8px;
   border: none;
-  border-top: 2px solid rgba(255, 255, 255, 0.35);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(55, 101, 252, 0.35);
-  color: #039;
-  color: light-dark(#039, #cfe0ff);
+  border-top: 2px solid light-dark(#d3ddff, rgba(176, 161, 161, 0.16));
+  border-bottom: 1px solid light-dark(#fff, rgba(176, 161, 161, 0.16));
+  background: light-dark(#b9c9fe, rgba(176, 161, 161, 0.16));
+  color: light-dark(#039, #e6e6e6);
   font-weight: normal;
   text-align: left;
   word-break: keep-all;
@@ -310,11 +281,10 @@ th {
 td {
   padding: 8px;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.35);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(140, 165, 255, 0.2);
-  color: #669;
-  color: light-dark(#669, #cfe0ff);
+  border-top: 1px solid light-dark(#fff, rgba(176, 161, 161, 0.16));
+  border-bottom: 1px solid light-dark(#fff, rgba(176, 161, 161, 0.16));
+  background: light-dark(#e8edff, rgba(176, 161, 161, 0.16));
+  color: light-dark(#669, #e6e6e6);
   word-break: keep-all;
 }
 
@@ -334,11 +304,12 @@ s,
 
 /* ==================== Rules ==================== */
 /* Blog: the only `hr` rule is `hr { margin-bottom: .2em }`, so an article rule is the browser
-   default — `1px inset #808080`. The shared stylesheet instead fakes a hairline with a 0.4em
-   box scaled to 50%, which has to be undone here. */
+   default — `1px inset #808080`, kept as the blog's grey by day and as the faint warm hairline at
+   night. The shared stylesheet instead fakes a hairline with a 0.4em box scaled to 50%, which has
+   to be undone here. */
 hr {
   margin: 0.5em auto 0.2em;
-  border: 1px inset #808080;
+  border: 1px inset light-dark(#808080, rgba(176, 161, 161, 0.16));
   height: auto;
   transform: none;
 }
@@ -347,15 +318,14 @@ hr {
 /* Blog: links keep the post pink rather than the WeChat blue from default.css —
    the 链接色 picker no longer reaches them here while custom CSS still overrides.
 
-   The blog's shadow greys (#efefef / #ccc) are opaque, so on a dark page they
-   glow brighter than the background. Black at 6% / 20% composites to exactly
-   those two greys over white, and over a dark page to ~#1c1c1c / ~#181818 —
-   i.e. the same engraved look when the page is light, nothing ugly when it is not. */
+   The blog's shadow greys (#efefef / #ccc) are opaque: by day they are exactly the blog's, at
+   night they become the same faint warm hairline the rest of the decorations use. */
 a {
   color: #d0648a;
   font-weight: bold;
   text-decoration: none;
-  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 1px 1px light-dark(#efefef, rgba(176, 161, 161, 0.28)),
+    2px 2px light-dark(#ccc, rgba(176, 161, 161, 0.1));
   overflow-wrap: break-word;
 }
 
@@ -380,7 +350,8 @@ a:hover {
   color: #d0648a;
   font-weight: bold;
   text-decoration: none;
-  text-shadow: 1px 1px rgba(0, 0, 0, 0.06), 2px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 1px 1px light-dark(#efefef, rgba(176, 161, 161, 0.28)),
+    2px 2px light-dark(#ccc, rgba(176, 161, 161, 0.1));
 }
 
 /* The ↩︎ jump-back link has no blog counterpart: keep it out of the link styling so the
@@ -409,4 +380,53 @@ p.footnotes + p.footnotes {
 .md-divider + h4.h4,
 p.footnotes + h4.h4 {
   margin-top: 1.6em;
+}
+
+/* ==================== Mermaid (dark only) ==================== */
+/* Mermaid draws its own palette inside the SVG through an id-scoped `<style>`, so the day look is
+   exactly what it drew and nothing is overridden by day. At night only the shapes need re-inking:
+   these selectors carry one id more than mermaid's own rules, which is what lets them win without
+   `!important`. The block sits behind `.dark`, which never exists in the pasted fragment, so the
+   article WeChat receives keeps mermaid's light classes; on a blog port the same rules live in a
+   `@media (prefers-color-scheme: dark)` block instead. */
+:root:is(.dark) #output .mermaid-diagram svg .node rect,
+:root:is(.dark) #output .mermaid-diagram svg .node circle,
+:root:is(.dark) #output .mermaid-diagram svg .node ellipse,
+:root:is(.dark) #output .mermaid-diagram svg .node polygon,
+:root:is(.dark) #output .mermaid-diagram svg .node path,
+:root:is(.dark) #output .mermaid-diagram svg .cluster rect {
+  fill: #1f2020;
+  stroke: rgba(176, 161, 161, 0.55);
+  stroke-width: 1px;
+}
+
+:root:is(.dark) #output .mermaid-diagram svg .nodeLabel,
+:root:is(.dark) #output .mermaid-diagram svg .label,
+:root:is(.dark) #output .mermaid-diagram svg text {
+  fill: #e6e6e6;
+  color: #e6e6e6;
+}
+
+:root:is(.dark) #output .mermaid-diagram svg .edgePath .path,
+:root:is(.dark) #output .mermaid-diagram svg .flowchart-link,
+:root:is(.dark) #output .mermaid-diagram svg .marker,
+:root:is(.dark) #output .mermaid-diagram svg marker path {
+  stroke: rgba(176, 161, 161, 0.55);
+  fill: rgba(176, 161, 161, 0.55);
+}
+
+/* ==================== Pele diagrams ==================== */
+/* ```pele diagrams (Mermaid syntax, Pele renderer) paint through CSS variables on their SVG root,
+   so they follow the same day/night split as the rest of the theme: the blog's greys and banding by
+   day, the faint warm family at night. One render serves both, because the browser re-resolves the
+   variables when the scheme changes. */
+.pele-diagram svg {
+  --pele-bg: transparent;
+  --pele-fg: light-dark(#222222, #e6e6e6);
+  --pele-muted: light-dark(#666666, #b0a1a1);
+  --pele-line: light-dark(#828887, rgba(176, 161, 161, 0.55));
+  --pele-surface: light-dark(#f2f2f2, rgba(176, 161, 161, 0.16));
+  --pele-surface-alt: light-dark(#e8edff, rgba(176, 161, 161, 0.16));
+  --pele-border: light-dark(#b9c9fe, rgba(176, 161, 161, 0.35));
+  --pele-accent: #d0648a;
 }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
-import { BookText, Code2, FileText, FunctionSquare, PieChart } from '@lucide/vue'
+import { BookText, Code2, FileText, FunctionSquare, PieChart, Workflow } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import PanelDialog from '@/components/shared/panel-dialog/PanelDialog.vue'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { peleExamples } from './peleExamples'
 
 const props = defineProps<{
   open: boolean
@@ -37,12 +38,13 @@ const dialogOpen = computed({
 const activeTab = ref(`basic`)
 const copiedSyntax = ref<string | null>(null)
 
-const syntaxCategoryIds = [`basic`, `code`, `math`, `diagram`, `other`] as const
+const syntaxCategoryIds = [`basic`, `code`, `math`, `diagram`, `pele`, `other`] as const
 const syntaxIcons: Record<string, Component> = {
   basic: FileText,
   code: Code2,
   math: FunctionSquare,
   diagram: PieChart,
+  pele: Workflow,
   other: BookText,
 }
 
@@ -51,7 +53,8 @@ const syntaxCategories = computed<SyntaxCategory[]>(() =>
     id,
     label: t(`markdownHelp.tabs.${id}`),
     icon: syntaxIcons[id],
-    items: tm(`markdownHelp.syntax.${id}`) as SyntaxItem[],
+    // The Pele list is data, not i18n: 58 diagram sources are language-neutral between locales.
+    items: id === `pele` ? peleExamples : tm(`markdownHelp.syntax.${id}`) as SyntaxItem[],
   })),
 )
 

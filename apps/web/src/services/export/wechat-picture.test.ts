@@ -132,4 +132,18 @@ describe(`resolvePictureImages (publish flow)`, () => {
     expect(srcs(html)).toEqual([`http://mmbiz.qpic.cn/m1`])
     expect(state.saved[0]![REL]).toMatchObject({ size: ASSET.size + 7, sha256: `edited` })
   })
+
+  it(`leaves an article without picture tags alone outside the studio`, async () => {
+    vi.stubGlobal(`window`, {})
+
+    await expect(resolvePictureHtml(`<p>plain</p>`)).resolves.toBe(`<p>plain</p>`)
+  })
+
+  // Skipping the upload would keep `downloads/...` srcs that no reader can open, so a page that
+  // cannot serve the blog checkout has to refuse rather than publish them.
+  it(`refuses picture tags outside the studio`, async () => {
+    vi.stubGlobal(`window`, {})
+
+    await expect(resolvePictureHtml(FILE)).rejects.toThrow(`upload.picture.studioRequired`)
+  })
 })

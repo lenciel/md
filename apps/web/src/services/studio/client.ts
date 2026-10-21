@@ -1,3 +1,5 @@
+import { t } from '@/i18n/translate'
+
 /**
  * HTTP client for the local blog workspace service (`apps/studio`).
  *
@@ -10,6 +12,26 @@ function buildHeaders(json: boolean): Record<string, string> {
   if (json)
     headers['Content-Type'] = `application/json`
   return headers
+}
+
+/**
+ * `fetch` that names the URL when the request never reaches a server.
+ *
+ * A browser-level rejection carries no status, so a studio that was restarted (or a proxy in
+ * between) is indistinguishable from any other outage — all the caller sees is
+ * `Failed to fetch`. Naming the URL is what makes that actionable.
+ */
+async function send(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init)
+  }
+  catch (error) {
+    // An aborted stream is a normal flow (the user stopped a command), not an outage.
+    if (error instanceof DOMException && error.name === `AbortError`)
+      throw error
+    console.warn(`[studio] request failed: ${url}`, error)
+    throw new Error(`${t(`network.unreachable`)}: ${url}`)
+  }
 }
 
 /** Non-2xx studio response; `payload` keeps the parsed error body (a 409 carries `stale` + disk content). */
@@ -153,7 +175,7 @@ async function toHttpError(response: Response): Promise<StudioHttpError> {
 }
 
 async function request<T>(path: string, init: RequestInit): Promise<T> {
-  const response = await fetch(`${window.__MD_STUDIO__?.apiBase ?? `/api`}${path}`, init)
+  const response = await send(`${window.__MD_STUDIO__?.apiBase ?? `/api`}${path}`, init)
   if (!response.ok)
     throw await toHttpError(response)
   return await response.json() as T
@@ -178,7 +200,7 @@ function parseFrame(frame: string): StudioCommandEvent | null {
 
 /** `POST /api/studio/exec` SSE stream; resolves when the server closes the stream. */
 async function execStream(commandId: string, options: StudioExecOptions): Promise<void> {
-  const response = await fetch(`${window.__MD_STUDIO__?.apiBase ?? `/api`}/studio/exec`, {
+  const response = await send(`${window.__MD_STUDIO__?.apiBase ?? `/api`}/studio/exec`, {
     method: `POST`,
     headers: buildHeaders(true),
     body: JSON.stringify({ commandId, from: options.from ?? 0, file: options.file }),
@@ -242,7 +264,7 @@ export const studioApi = {
   ),
 
   async assetBlob(path: string): Promise<Blob> {
-    const response = await fetch(
+    const response = await send(
       `${window.__MD_STUDIO__?.apiBase ?? `/api`}/studio/asset?path=${encodeURIComponent(path)}`,
       { headers: buildHeaders(false) },
     )

@@ -140,6 +140,7 @@ export default {
       code: `Code Blocks`,
       math: `Math`,
       diagram: `Diagrams`,
+      pele: `Pele Examples`,
       other: `Other`,
     },
     syntax: {

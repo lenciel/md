@@ -53,6 +53,23 @@ section table {
   letter-spacing: unset !important;
 }
 
+/* ==================== Pele diagrams ====================
+ * ```pele fences render Mermaid syntax through Pele (https://pele.run), which paints with CSS
+ * variables on its root <svg class="pele">. Map them onto the article's own colours so a diagram
+ * follows the theme instead of Pele's defaults. A theme can override any of them; lenciel.css does,
+ * for day/night.
+ */
+.pele-diagram svg {
+  --pele-bg: transparent;
+  --pele-fg: hsl(var(--foreground));
+  --pele-muted: color-mix(in srgb, hsl(var(--foreground)) 60%, transparent);
+  --pele-line: color-mix(in srgb, hsl(var(--foreground)) 80%, transparent);
+  --pele-surface: transparent;
+  --pele-surface-alt: color-mix(in srgb, hsl(var(--foreground)) 6%, transparent);
+  --pele-border: color-mix(in srgb, hsl(var(--foreground)) 30%, transparent);
+  --pele-accent: var(--md-primary-color);
+}
+
 /* ==================== Inline emoji ====================
  * `<img class="md-emoji">` comes from `<Emoji id="…">` (and legacy
  * `{{emoji:id}}`). Native pixel sizing makes the image dwarf the surrounding

@@ -28,7 +28,8 @@
     "isomorphic-dompurify": "catalog:",
     "js-yaml": "^5.4.2",
     "marked": "catalog:",
-    "mermaid": "^11.17.2"
+    "mermaid": "^11.17.2",
+    "pele": "^1.6.0"
   },
   "devDependencies": {
     "@md/config": "workspace:*",

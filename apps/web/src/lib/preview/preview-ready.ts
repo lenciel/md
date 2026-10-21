@@ -9,7 +9,7 @@ import { delay } from '@/lib/delay'
 
 const PREVIEW_READY_TIMEOUT_MS = 20_000
 const PREVIEW_POLL_INTERVAL_MS = 250
-const ASYNC_DIAGRAM_SELECTOR = `.mermaid-diagram, .plantuml-diagram, .infographic-diagram`
+const ASYNC_DIAGRAM_SELECTOR = `.mermaid-diagram, .pele-diagram, .plantuml-diagram, .infographic-diagram`
 
 export interface WaitForPreviewReadyOptions {
   themeMode?: `light` | `dark`

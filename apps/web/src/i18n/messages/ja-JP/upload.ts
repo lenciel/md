@@ -142,6 +142,7 @@ export default {
       notFound: `ファイルが見つかりません`,
       convertFailed: `画像形式の変換に失敗しました`,
       failed: `以下の画像を WeChat にアップロードできなかったため、処理を中止しました：{items}`,
+      studioRequired: `この記事には Jekyll の picture タグで生成された画像があり、studio からのみ公開できます（通常の Web ページはブログのディレクトリを読み取れません）。`,
     },
     provider: {
       accessTokenFailed: `access_token の取得に失敗しました`,

@@ -1,4 +1,5 @@
 import type { S3ClientConfig } from '@aws-sdk/client-s3'
+import type { RequestConfig } from '@md/shared/utils/fetch'
 import type { UploadProviderId } from '@/services/upload/provider-registry'
 import fetch from '@md/shared/utils/fetch'
 import * as tokenTools from '@md/shared/utils/tokenTools'
@@ -410,6 +411,25 @@ interface MpResponse {
   errcode: number
   errmsg: string
 }
+
+/**
+ * `fetch` that names the endpoint when the request never reaches a server.
+ *
+ * A browser-level rejection carries no status: a dead proxy, a wrong 代理域名 or an endpoint the
+ * proxy does not route all collapse into the same `Failed to fetch`, which says nothing about
+ * where it broke. The access_token rides in the query string, so only the path is reported.
+ */
+async function mpFetch<T>(url: string, options: RequestConfig): Promise<T> {
+  try {
+    return await fetch<any, T>(url, options)
+  }
+  catch (error) {
+    const endpoint = url.split(`?`)[0]
+    console.warn(`[mp] request failed: ${endpoint}`, error)
+    throw new Error(`${t(`network.unreachable`)}: ${endpoint}`)
+  }
+}
+
 async function getMpToken(appID: string, appsecret: string, proxyOrigin?: string) {
   const data = await store.get(`mpToken:${appID}`)
   if (data) {
@@ -435,7 +455,7 @@ async function getMpToken(appID: string, appsecret: string, proxyOrigin?: string
   if (proxyOrigin) {
     url = `${proxyOrigin}/cgi-bin/stable_token`
   }
-  const res = await fetch<any, MpResponse>(url, requestOptions)
+  const res = await mpFetch<MpResponse>(url, requestOptions)
   if (res.access_token) {
     const tokenInfo = {
       ...res,
@@ -492,7 +512,7 @@ export async function mpApiCall<T extends Record<string, any>>(
   if (!accessToken)
     throw new Error(t(`upload.provider.accessTokenFailed`))
 
-  return await fetch<any, T>(mpEndpoint(path, accessToken, proxyOrigin), { method: `POST`, data: body })
+  return await mpFetch<T>(mpEndpoint(path, accessToken, proxyOrigin), { method: `POST`, data: body })
 }
 
 function mpEndpoint(path: string, accessToken: string, proxyOrigin?: string): string {

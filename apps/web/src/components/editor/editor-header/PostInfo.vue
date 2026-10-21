@@ -9,6 +9,7 @@ import { shouldReplaceDraft } from '@/services/upload/providers'
 import { useEditorStore } from '@/stores/editor'
 import { useRenderStore } from '@/stores/render'
 import { useStudioStore } from '@/stores/studio'
+import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
 
 defineOptions({
@@ -28,6 +29,7 @@ const studioStore = useStudioStore()
 const autoThumb = ref(``)
 
 const uiStore = useUIStore()
+const themeStore = useThemeStore()
 const { isMobile } = storeToRefs(uiStore)
 
 const dialogVisible = ref(false)
@@ -236,6 +238,7 @@ async function post() {
       form.value.markdown,
       renderStore.getRenderer(),
       studioStore.siteAuthor,
+      themeStore.theme,
     )
     form.value.content = article.content
     if (form.value.thumb === autoThumb.value)

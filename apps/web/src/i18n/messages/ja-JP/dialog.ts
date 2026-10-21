@@ -140,6 +140,7 @@ export default {
       code: `コードブロック`,
       math: `数式`,
       diagram: `図表`,
+      pele: `Pele の例`,
       other: `その他`,
     },
     syntax: {

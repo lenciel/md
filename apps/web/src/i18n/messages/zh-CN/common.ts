@@ -279,4 +279,7 @@ export default {
       none: `不显示`,
     },
   },
+  network: {
+    unreachable: `无法连接该地址（请求未送达，检查网络或代理）`,
+  },
 }

@@ -5,6 +5,7 @@ import { useRenderStore } from '@/stores/render'
 import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
 import { createEmptyNode, modifyHtmlStructure, preserveAnchorStyles, promoteSvgHtmlLabels, sanitizeHtmlCssForJuice, solveWeChatImage, stripFontFamilyForJuiceFallback, stripInvalidCssForJuice } from './clipboard-dom'
+import { LENCIEL_DARK_OVERRIDES } from './dark-article'
 import { getStylesToAdd } from './share-styles'
 import { resolvePictureImages } from './wechat-picture'
 import { prepareDiagramSvgsForWeChat, prepareMathFormulasForWeChat, sanitizeSvgsForWeChat } from './wechat-svg'
@@ -76,9 +77,12 @@ export async function processClipboardContent(primaryColor: string) {
     await inlineEmojiImagesAsBase64(clipboardDiv)
 
     const stylesToAdd = await getStylesToAdd()
+    // A reader's dark mode cannot be inlined (the reader decides it), so the lenciel theme appends
+    // its night values as a `prefers-color-scheme` block — see dark-article.ts.
+    const darkOverrides = themeStore.theme === `lenciel` ? LENCIEL_DARK_OVERRIDES : ``
 
-    if (stylesToAdd) {
-      clipboardDiv.innerHTML = stylesToAdd + clipboardDiv.innerHTML
+    if (stylesToAdd || darkOverrides) {
+      clipboardDiv.innerHTML = darkOverrides + (stylesToAdd ?? ``) + clipboardDiv.innerHTML
     }
 
     stripInvalidCssForJuice(clipboardDiv)

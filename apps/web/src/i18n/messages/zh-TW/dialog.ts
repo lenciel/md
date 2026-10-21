@@ -140,6 +140,7 @@ export default {
       code: `程式碼塊`,
       math: `數學公式`,
       diagram: `圖表繪製`,
+      pele: `Pele 範例`,
       other: `其他語法`,
     },
     syntax: {

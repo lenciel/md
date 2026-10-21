@@ -58,8 +58,13 @@ const overrides = {
      * so the code-theme picker is locked to it for this theme.
      */
     codeBlockTheme: `https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/base16/solarized-dark.min.css`,
-    // The blog's code blocks carry no mac-style header row and no gutter.
-    isMacCodeBlock: false,
+    /**
+     * The 「春日清新」 block look (see the code section of lenciel.css) includes the renderer's
+     * mac-style header row of three dots. The renderer always emits that span; this flag is what
+     * displays it (`postProcessHtml` writes `.hljs.code__pre > .mac-sign { display: flex }`), so it
+     * has to be on for the header to show. No gutter: the blog has neither.
+     */
+    isMacCodeBlock: true,
     isShowLineNumber: false,
     primaryColor: `#d0648a`,
     linkColor: `#d0648a`,

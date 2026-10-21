@@ -55,8 +55,14 @@ async function toUploadableImage(file: File): Promise<File> {
  */
 export async function resolvePictureImages(container: ParentNode): Promise<PictureUploadSummary> {
   const images = [...container.querySelectorAll<HTMLImageElement>(PICTURE_SELECTOR)]
-  if (images.length === 0 || !window.__MD_STUDIO__)
+  if (images.length === 0)
     return { uploaded: 0, reused: 0 }
+
+  // Picture tags point at files in the blog checkout, and only the studio can serve those bytes.
+  // Returning quietly would keep `downloads/...` srcs that no reader can open, so refuse instead —
+  // both callers (复制到公众号 and the 发布 dialog) surface the message as a toast.
+  if (!window.__MD_STUDIO__)
+    throw new Error(t(`upload.picture.studioRequired`))
 
   const { manifest } = await studioApi.wxmpManifest()
   const updates: Record<string, StudioWxmpRecord> = {}

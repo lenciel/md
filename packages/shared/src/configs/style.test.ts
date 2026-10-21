@@ -26,16 +26,17 @@ describe(`resolvePerThemeSettings`, () => {
     expect(settings.headingStyles).toEqual({})
   })
 
-  it(`locks the code block to the blog's solarized palette and chrome`, () => {
+  it(`locks the code block theme and chrome`, () => {
     const settings = resolvePerThemeSettings(`lenciel`, {
       ...defaultPerThemeSettings(`lenciel`),
       codeBlockTheme: `https://example.com/github-dark.min.css`,
-      isMacCodeBlock: true,
+      // Stored values are the opposite of what the theme owns, so this also proves the override.
+      isMacCodeBlock: false,
       isShowLineNumber: true,
     })
 
     expect(settings.codeBlockTheme).toContain(`base16/solarized-dark.min.css`)
-    expect(settings.isMacCodeBlock).toBe(false)
+    expect(settings.isMacCodeBlock).toBe(true)
     expect(settings.isShowLineNumber).toBe(false)
   })
 

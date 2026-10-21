@@ -142,6 +142,7 @@ export default {
       notFound: `文件不存在`,
       convertFailed: `图片格式转换失败`,
       failed: `以下图片无法上传到公众号，已中止：{items}`,
+      studioRequired: `文章里有 Jekyll picture 标签生成的图片，只能在 studio 里发布（普通网页读不到博客目录里的文件）`,
     },
     provider: {
       accessTokenFailed: `获取 access_token 失败`,

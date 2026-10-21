@@ -279,4 +279,7 @@ export default {
       none: `None`,
     },
   },
+  network: {
+    unreachable: `Cannot reach this address (the request never arrived — check the network or proxy)`,
+  },
 }

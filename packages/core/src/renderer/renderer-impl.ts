@@ -18,6 +18,7 @@ import {
   markedLinkAttrs,
   markedMarkup,
   markedMermaid,
+  markedPele,
   markedPlantUML,
   markedRuby,
   markedSlider,
@@ -509,6 +510,9 @@ export function initRenderer(opts: IOpts = {}): RendererAPI {
   markdownParser.use(footnotesExtension)
   markdownParser.use(markedMermaid(() => ({
     themeMode: opts.themeMode,
+    diagramMessages: opts.diagramMessages,
+  })))
+  markdownParser.use(markedPele(() => ({
     diagramMessages: opts.diagramMessages,
   })))
   markdownParser.use(markedPlantUML({

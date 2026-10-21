@@ -124,6 +124,29 @@ describe(`mp material upload (article pictures)`, () => {
     vi.unstubAllGlobals()
   })
 
+  // A browser-level rejection carries no status. Without the URL the picture step reports a bare
+  // `Failed to fetch`, which cannot tell a dead proxy from a restarted studio — naming the
+  // endpoint is what makes it actionable. The access_token lives in the query string, so only
+  // the path may appear in the message.
+  it(`names the endpoint when the token request never reaches a server`, async () => {
+    memStore.set(`mpConfig`, JSON.stringify({ appID: `wx1234567890`, appsecret: `secret`, proxyOrigin: `https://proxy.example.com` }))
+    vi.stubGlobal(`fetch`, vi.fn(() => Promise.reject(new TypeError(`Failed to fetch`))))
+
+    await expect(uploadMpMaterial(pngFile())).rejects.toThrow(
+      `network.unreachable: https://proxy.example.com/cgi-bin/stable_token`,
+    )
+  })
+
+  it(`names the upload endpoint when the material upload never reaches a server`, async () => {
+    memStore.set(`mpConfig`, JSON.stringify({ appID: `wx1234567890`, appsecret: `secret`, proxyOrigin: `https://proxy.example.com` }))
+    memStore.set(`mpToken:wx1234567890`, JSON.stringify({ access_token: `TOKEN`, expire: Date.now() + 60_000 }))
+    vi.stubGlobal(`fetch`, vi.fn(() => Promise.reject(new TypeError(`Failed to fetch`))))
+
+    await expect(uploadMpMaterial(pngFile())).rejects.toThrow(
+      `network.unreachable: https://proxy.example.com/cgi-bin/material/add_material`,
+    )
+  })
+
   it(`goes through the studio's same-origin /cgi-bin proxy`, async () => {
     vi.stubGlobal(`window`, {
       __MD_STUDIO__: true,
