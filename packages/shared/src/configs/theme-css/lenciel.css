@@ -272,7 +272,9 @@ th {
   border-top: 2px solid light-dark(#d3ddff, rgba(176, 161, 161, 0.16));
   border-bottom: 1px solid light-dark(#fff, rgba(176, 161, 161, 0.16));
   background: light-dark(#b9c9fe, rgba(176, 161, 161, 0.16));
-  color: light-dark(#039, #e6e6e6);
+  /* Neutral rather than the blog's navy: WeChat's own dark-mode script only maps greys reliably,
+     and a saturated ink lands as dark-on-dark there. */
+  color: light-dark(#3f3f3f, #e6e6e6);
   font-weight: normal;
   text-align: left;
   word-break: keep-all;
@@ -284,7 +286,7 @@ td {
   border-top: 1px solid light-dark(#fff, rgba(176, 161, 161, 0.16));
   border-bottom: 1px solid light-dark(#fff, rgba(176, 161, 161, 0.16));
   background: light-dark(#e8edff, rgba(176, 161, 161, 0.16));
-  color: light-dark(#669, #e6e6e6);
+  color: light-dark(#4a4a4a, #e6e6e6);
   word-break: keep-all;
 }
 

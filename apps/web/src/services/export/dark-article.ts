@@ -29,3 +29,21 @@ export const LENCIEL_DARK_OVERRIDES = `<style>
   .pele-diagram svg { --pele-fg: #e6e6e6; --pele-muted: #b0a1a1; --pele-line: rgba(176, 161, 161, 0.55); --pele-surface: rgba(176, 161, 161, 0.16); --pele-surface-alt: rgba(176, 161, 161, 0.16); --pele-border: rgba(176, 161, 161, 0.35); }
 }
 </style>`
+
+/**
+ * Readability floor for the pasted article, shipped for every theme.
+ *
+ * WeChat's dark-mode pass repaints the page background and the element backgrounds it recognizes,
+ * but the inlined *light* ink survives — so a table header written white (grace) or navy (lenciel
+ * on its banding) ends up dark-on-dark and unreadable. These rules only fix contrast on the
+ * surfaces the reader paints itself; they say nothing about a theme's palette, which is why they
+ * are safe for all themes. The lenciel block, when present, is appended after this one and wins.
+ */
+export const ARTICLE_DARK_READABILITY = `<style>
+@media (prefers-color-scheme: dark) {
+  th, td, caption, thead { color: #e6e6e6 !important; }
+  th, td { background-color: rgba(255, 255, 255, 0.06) !important; border-color: rgba(255, 255, 255, 0.16) !important; }
+  blockquote { color: #e6e6e6 !important; }
+  .codespan { color: #e6e6e6 !important; }
+}
+</style>`

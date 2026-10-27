@@ -60,11 +60,13 @@ describe(`resolveWechatArticle`, () => {
     const article = await resolveWechatArticle(content, POST, renderer, `Lenciel`)
 
     expect(article).toEqual({
-      content,
+      // The exported HTML now ends with the reader's dark-mode readability block.
+      content: expect.stringContaining(content),
       title: `Fragments 0x000F`,
       summary: `...代码写得再快再好，也必须与它所嵌入的系统和组织的价值观、上下文和约束条件保持一致...`,
       cover: `http://mmbiz.qpic.cn/mmbiz_png/abc/0`,
       author: `Lenciel`,
     })
+    expect(article.content).toContain(`prefers-color-scheme: dark`)
   })
 })

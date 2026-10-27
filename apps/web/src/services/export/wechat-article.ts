@@ -1,6 +1,6 @@
 import type { RendererAPI } from '@md/shared/types'
 import type { WechatArticle } from '@/types/wechat'
-import { LENCIEL_DARK_OVERRIDES } from './dark-article'
+import { ARTICLE_DARK_READABILITY, LENCIEL_DARK_OVERRIDES } from './dark-article'
 import { resolvePictureHtml } from './wechat-picture'
 
 /** WeChat caps 摘要 at 120 characters; anything longer is silently clipped there. */
@@ -60,7 +60,8 @@ export async function resolveWechatArticle(
   const content = await resolvePictureHtml(html)
   // The draft never goes through the clipboard, so the same `prefers-color-scheme` block is appended
   // here: a reader's dark mode is decided on their side (see dark-article.ts).
-  const themed = theme === `lenciel` ? `${content}${LENCIEL_DARK_OVERRIDES}` : content
+  // The readability floor ships for every theme; the lenciel block comes after it and wins.
+  const themed = `${content}${ARTICLE_DARK_READABILITY}${theme === `lenciel` ? LENCIEL_DARK_OVERRIDES : ``}`
   const metadata = renderer ? articleMetadata(markdown, renderer) : { title: ``, summary: ``, author: `` }
 
   return {
